@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import Link from 'next/link';
 
 interface Category {
   id: string;
@@ -163,12 +164,12 @@ export default function EditCategoryPage({ params }: { params: { id: string } })
         <h1 className="text-3xl font-bold">
           {params.id === 'new' ? 'New Category' : 'Edit Category'}
         </h1>
-        <button
-          onClick={() => router.push('/admin/categories')}
-          className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900"
+        <Link
+          href="/admin/categories"
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
         >
           Back to Categories
-        </button>
+        </Link>
       </div>
 
       {error && (
@@ -186,7 +187,7 @@ export default function EditCategoryPage({ params }: { params: { id: string } })
             type="text"
             value={category.name}
             onChange={handleNameChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm"
             required
           />
         </div>
@@ -199,12 +200,9 @@ export default function EditCategoryPage({ params }: { params: { id: string } })
             type="text"
             value={category.slug}
             onChange={handleSlugChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm"
             required
           />
-          <p className="mt-1 text-sm text-gray-500">
-            The URL-friendly version of the name. Auto-generated but can be edited.
-          </p>
         </div>
 
         <div>
@@ -214,8 +212,8 @@ export default function EditCategoryPage({ params }: { params: { id: string } })
           <textarea
             value={category.description || ''}
             onChange={(e) => setCategory(prev => ({ ...prev, description: e.target.value }))}
-            rows={4}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+            rows={3}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm"
           />
         </div>
 
@@ -226,10 +224,10 @@ export default function EditCategoryPage({ params }: { params: { id: string } })
           <select
             value={category.parent_id || ''}
             onChange={(e) => setCategory(prev => ({ ...prev, parent_id: e.target.value || null }))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm"
           >
-            <option value="">None (Top Level)</option>
-            {categories.map(cat => (
+            <option value="">None</option>
+            {categories.map((cat) => (
               <option key={cat.id} value={cat.id}>
                 {cat.name}
               </option>
@@ -245,7 +243,7 @@ export default function EditCategoryPage({ params }: { params: { id: string } })
             type="number"
             value={category.order_index}
             onChange={(e) => setCategory(prev => ({ ...prev, order_index: parseInt(e.target.value) || 0 }))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm"
           />
           <p className="mt-1 text-sm text-gray-500">
             Controls the display order of categories. Lower numbers appear first. Use this to manually sort your categories in the desired order.
@@ -256,14 +254,14 @@ export default function EditCategoryPage({ params }: { params: { id: string } })
           <button
             type="button"
             onClick={() => router.push('/admin/categories')}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 transition-all duration-200 disabled:opacity-50"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? 'Saving...' : 'Save Category'}
           </button>

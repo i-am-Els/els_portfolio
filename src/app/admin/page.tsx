@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { PlusIcon, PencilIcon } from '@heroicons/react/24/outline';
 
 interface DashboardStats {
   totalProjects: number;
@@ -79,24 +80,8 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <div className="flex gap-3">
-          <Link
-            href="/admin/projects/new"
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 transition-all duration-200"
-          >
-            <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-            New Project
-          </Link>
-          <Link
-            href="/admin/categories/new"
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 transition-all duration-200"
-          >
-            <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-            New Category
-          </Link>
-        </div>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
       </div>
 
       {/* Stats Grid */}
@@ -141,29 +126,47 @@ export default function AdminDashboard() {
           className="bg-white p-6 rounded-lg shadow-sm border border-gray-100"
         >
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Recent Projects</h3>
+            <h2 className="text-xl font-semibold text-gray-900">Recent Projects</h2>
             <Link
-              href="/admin/projects"
-              className="text-sm text-gray-500 hover:text-gray-900"
+              href="/admin/projects/new"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
             >
-              View all
+              <PlusIcon className="h-5 w-5 mr-2" />
+              New Project
             </Link>
           </div>
-          <div className="space-y-4">
-            {stats.recentProjects.map((project) => (
-              <div
-                key={project.id}
-                className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0"
-              >
-                <span className="text-gray-900">{project.title}</span>
-                <Link
-                  href={`/admin/projects/${project.id}`}
-                  className="text-sm text-gray-500 hover:text-gray-900"
-                >
-                  Edit
-                </Link>
-              </div>
-            ))}
+          <div className="bg-white shadow overflow-hidden sm:rounded-md">
+            <ul className="divide-y divide-gray-200">
+              {stats.recentProjects.map((project) => (
+                <li key={project.id}>
+                  <div className="px-4 py-4 flex items-center sm:px-6">
+                    <div className="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
+                      <div>
+                        <div className="flex text-sm">
+                          <p className="font-medium text-gray-900 truncate">{project.title}</p>
+                        </div>
+                        <div className="mt-2 flex">
+                          <div className="flex items-center text-sm text-gray-500">
+                            <p>
+                              Created {new Date(project.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="ml-5 flex-shrink-0">
+                      <Link
+                        href={`/admin/projects/${project.id}/edit`}
+                        className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
+                      >
+                        <PencilIcon className="h-4 w-4 mr-1" />
+                        Edit
+                      </Link>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
         </motion.div>
 
@@ -174,29 +177,47 @@ export default function AdminDashboard() {
           className="bg-white p-6 rounded-lg shadow-sm border border-gray-100"
         >
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Recent Blog Posts</h3>
+            <h2 className="text-xl font-semibold text-gray-900">Recent Blog Posts</h2>
             <Link
-              href="/admin/blog"
-              className="text-sm text-gray-500 hover:text-gray-900"
+              href="/admin/blog/new"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
             >
-              View all
+              <PlusIcon className="h-5 w-5 mr-2" />
+              New Blog Post
             </Link>
           </div>
-          <div className="space-y-4">
-            {stats.recentBlogPosts.map((post) => (
-              <div
-                key={post.id}
-                className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0"
-              >
-                <span className="text-gray-900">{post.title}</span>
-                <Link
-                  href={`/admin/blog/${post.id}`}
-                  className="text-sm text-gray-500 hover:text-gray-900"
-                >
-                  Edit
-                </Link>
-              </div>
-            ))}
+          <div className="bg-white shadow overflow-hidden sm:rounded-md">
+            <ul className="divide-y divide-gray-200">
+              {stats.recentBlogPosts.map((post) => (
+                <li key={post.id}>
+                  <div className="px-4 py-4 flex items-center sm:px-6">
+                    <div className="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
+                      <div>
+                        <div className="flex text-sm">
+                          <p className="font-medium text-gray-900 truncate">{post.title}</p>
+                        </div>
+                        <div className="mt-2 flex">
+                          <div className="flex items-center text-sm text-gray-500">
+                            <p>
+                              Created {new Date(post.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="ml-5 flex-shrink-0">
+                      <Link
+                        href={`/admin/blog/${post.id}/edit`}
+                        className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
+                      >
+                        <PencilIcon className="h-4 w-4 mr-1" />
+                        Edit
+                      </Link>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
         </motion.div>
       </div>

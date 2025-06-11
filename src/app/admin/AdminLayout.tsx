@@ -89,27 +89,43 @@ export default function AdminLayout({
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
                 <Link
                   href="/admin"
-                  className={`admin-nav-link ${pathname === '/admin' ? 'active' : ''}`}
+                  className={`flex items-center px-4 py-2 text-sm ${
+                    pathname === '/admin'
+                      ? 'text-black font-semibold border-b-2 border-black'
+                      : 'text-gray-500 hover:text-gray-900 font-medium'
+                  }`}
                 >
                   Dashboard
                 </Link>
                 <Link
                   href="/admin/projects"
-                  className={`admin-nav-link ${pathname.startsWith('/admin/projects') ? 'active' : ''}`}
+                  className={`flex items-center px-4 py-2 text-sm ${
+                    pathname.startsWith('/admin/projects')
+                      ? 'text-black font-semibold border-b-2 border-black'
+                      : 'text-gray-500 hover:text-gray-900 font-medium'
+                  }`}
                 >
                   Projects
                 </Link>
                 <Link
                   href="/admin/categories"
-                  className={`admin-nav-link ${pathname.startsWith('/admin/categories') ? 'active' : ''}`}
+                  className={`flex items-center px-4 py-2 text-sm ${
+                    pathname.startsWith('/admin/categories')
+                      ? 'text-black font-semibold border-b-2 border-black'
+                      : 'text-gray-500 hover:text-gray-900 font-medium'
+                  }`}
                 >
                   Categories
                 </Link>
                 <Link
                   href="/admin/blog"
-                  className={`admin-nav-link ${pathname.startsWith('/admin/blog') ? 'active' : ''}`}
+                  className={`flex items-center px-4 py-2 text-sm ${
+                    pathname.startsWith('/admin/blog')
+                      ? 'text-black font-semibold border-b-2 border-black'
+                      : 'text-gray-500 hover:text-gray-900 font-medium'
+                  }`}
                 >
-                  Blog Posts
+                  Blog
                 </Link>
               </div>
             </div>
@@ -122,7 +138,7 @@ export default function AdminLayout({
               </div>
               <button
                 onClick={handleSignOut}
-                className="inline-flex items-center px-4 py-2 bg-gray-800 text-white font-semibold rounded-md shadow-sm hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-800 transition-all duration-200 ml-4"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-600 transition-all duration-200 ml-4"
               >
                 Sign Out
               </button>

@@ -247,14 +247,14 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
     <div className="min-h-screen bg-[#f5f3f0]">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold">
             {params.id === 'new' ? 'New Project' : 'Edit Project'}
           </h1>
           <Link
             href="/admin/projects"
-            className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
           >
-            Cancel
+            Back to Projects
           </Link>
         </div>
 
@@ -273,7 +273,7 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
               type="text"
               value={project.title}
               onChange={handleTitleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm"
               required
             />
           </div>
@@ -286,12 +286,9 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
               type="text"
               value={project.slug}
               onChange={handleSlugChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm"
               required
             />
-            <p className="mt-1 text-sm text-gray-500">
-              The URL-friendly version of the title. Auto-generated but can be edited.
-            </p>
           </div>
 
           <div>
@@ -302,138 +299,14 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
               value={project.description}
               onChange={(e) => setProject(prev => ({ ...prev, description: e.target.value }))}
               rows={4}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm"
               required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Image URL
-            </label>
-            <input
-              type="url"
-              value={project.image_url || ''}
-              onChange={(e) => setProject(prev => ({ ...prev, image_url: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Project URL
-            </label>
-            <input
-              type="url"
-              value={project.project_url || ''}
-              onChange={(e) => setProject(prev => ({ ...prev, project_url: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              GitHub URL
-            </label>
-            <input
-              type="url"
-              value={project.github_url || ''}
-              onChange={(e) => setProject(prev => ({ ...prev, github_url: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Categories
-            </label>
-            <div className="space-y-2">
-              {categories.map(category => (
-                <label key={category.id} className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={selectedCategories.includes(category.id)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedCategories([...selectedCategories, category.id]);
-                      } else {
-                        setSelectedCategories(selectedCategories.filter(id => id !== category.id));
-                      }
-                    }}
-                    className="rounded border-gray-300 text-primary focus:ring-primary"
-                  />
-                  <span>{category.name}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Technologies
-            </label>
-            <div className="flex gap-2 mb-2">
-              <input
-                type="text"
-                value={newTech}
-                onChange={(e) => setNewTech(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddTech();
-                  }
-                }}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                placeholder="Add a technology (press Enter or click Add)"
-              />
-              <button
-                type="button"
-                onClick={handleAddTech}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 transition-all duration-200"
-              >
-                Add
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {project.technologies.map((tech, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm"
-                >
-                  <span>{tech}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveTech(index)}
-                    className="text-gray-500 hover:text-gray-700 focus:outline-none"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-            <p className="mt-1 text-sm text-gray-500">
-              Press Enter or click Add to add a technology. Click the × to remove.
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Order Index
-            </label>
-            <input
-              type="number"
-              value={project.order_index}
-              onChange={(e) => setProject(prev => ({ ...prev, order_index: parseInt(e.target.value) || 0 }))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-            />
-            <p className="mt-1 text-sm text-gray-500">
-              Controls the display order of projects. Lower numbers appear first. Use this to manually sort your projects in the desired order.
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Project Image
+              Featured Image
             </label>
             <div className="mt-1 flex items-center space-x-4">
               <div className="flex-shrink-0">
@@ -457,21 +330,159 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
                     file:mr-4 file:py-2 file:px-4
                     file:rounded-lg file:border-0
                     file:text-sm file:font-medium
-                    file:bg-white file:text-gray-700
-                    hover:file:bg-gray-50"
+                    file:bg-black file:text-white
+                    hover:file:bg-gray-800"
                 />
-                <p className="mt-1 text-sm text-gray-500">
-                  Recommended size: 1200x800px. Max file size: 5MB
-                </p>
               </div>
             </div>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Project URL
+            </label>
+            <input
+              type="url"
+              value={project.project_url || ''}
+              onChange={(e) => setProject(prev => ({ ...prev, project_url: e.target.value }))}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              GitHub URL
+            </label>
+            <input
+              type="url"
+              value={project.github_url || ''}
+              onChange={(e) => setProject(prev => ({ ...prev, github_url: e.target.value }))}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Technologies
+            </label>
+            <div className="mt-1 flex items-center space-x-2">
+              <input
+                type="text"
+                value={newTech}
+                onChange={(e) => setNewTech(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddTech();
+                  }
+                }}
+                placeholder="Add a technology and press Enter or click Add"
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm"
+              />
+              <button
+                type="button"
+                onClick={handleAddTech}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
+              >
+                Add
+              </button>
+            </div>
+            <p className="mt-1 text-sm text-gray-500">
+              Press Enter or click Add to add a technology. Click the X to remove a technology.
+            </p>
+          </div>
+
+          <div className="mt-2 flex flex-wrap gap-2">
+            {project.technologies.map((tech, index) => (
+              <span
+                key={index}
+                className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800"
+              >
+                {tech}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveTech(index)}
+                  className="ml-2 text-gray-500 hover:text-gray-700"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Categories
+            </label>
+            <div className="mt-2 space-y-2">
+              {categories.map((category) => (
+                <label key={category.id} className="inline-flex items-center mr-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedCategories.includes(category.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedCategories([...selectedCategories, category.id]);
+                      } else {
+                        setSelectedCategories(selectedCategories.filter(id => id !== category.id));
+                      }
+                    }}
+                    className="rounded border-gray-300 text-black focus:ring-black"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">{category.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Order Index
+            </label>
+            <input
+              type="number"
+              value={project.order_index}
+              onChange={(e) => setProject(prev => ({ ...prev, order_index: parseInt(e.target.value) || 0 }))}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm"
+            />
+            <p className="mt-1 text-sm text-gray-500">
+              Controls the display order of projects. Lower numbers appear first. Use this to manually sort your projects in the desired order.
+            </p>
+          </div>
+
+          <div className="flex items-center space-x-4">
+            <label className="inline-flex items-center">
+              <input
+                type="checkbox"
+                checked={project.published}
+                onChange={(e) => setProject(prev => ({ ...prev, published: e.target.checked }))}
+                className="rounded border-gray-300 text-black focus:ring-black"
+              />
+              <span className="ml-2 text-sm text-gray-700">Published</span>
+            </label>
+            <label className="inline-flex items-center">
+              <input
+                type="checkbox"
+                checked={project.featured}
+                onChange={(e) => setProject(prev => ({ ...prev, featured: e.target.checked }))}
+                className="rounded border-gray-300 text-black focus:ring-black"
+              />
+              <span className="ml-2 text-sm text-gray-700">Featured</span>
+            </label>
+          </div>
+
           <div className="flex justify-end space-x-3">
+            <button
+              type="button"
+              onClick={() => router.push('/admin/projects')}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+            >
+              Cancel
+            </button>
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 transition-all duration-200 disabled:opacity-50"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? 'Saving...' : 'Save Project'}
             </button>
