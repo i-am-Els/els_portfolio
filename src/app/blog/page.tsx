@@ -6,19 +6,17 @@ import Image from 'next/image';
 import Navigation from '@/components/Navigation';
 import ContactFooter from '@/components/ContactFooter';
 import { blogPosts } from '@/data/blog-posts';
+import { categories, categoryTagMap } from '@/data/categories';
+
+const ITEMS_PER_PAGE = 6;
 
 export default function BlogPage() {
   const [activeCategory, setActiveCategory] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const filteredPosts = activeCategory === 'all' 
     ? blogPosts 
     : blogPosts.filter(post => {
-        const categoryTagMap: { [key: string]: string[] } = {
-          'game-dev': ['unreal', 'unity', 'game', 'development', 'c++', 'blueprint', 'gameplay', 'ue5', 'unreal engine'],
-          'tech-art': ['blender', 'shader', 'technical', 'art', 'digital art', '3d', 'modeling', 'texture', 'animation', 'hlsl'],
-          'tutorials': ['tutorial', 'guide', 'learning', 'how-to', 'documentation', 'beginner', 'advanced']
-        };
-
         const relatedTags = categoryTagMap[activeCategory] || [];
         
         return post.tags.some(tag => 
@@ -27,6 +25,22 @@ export default function BlogPage() {
           )
         );
       });
+
+  // Sort posts by date (most recent first)
+  const sortedPosts = [...filteredPosts].sort((a, b) => 
+    new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+
+  // Calculate pagination
+  const totalPages = Math.ceil(sortedPosts.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedPosts = sortedPosts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  // Reset to first page when category changes
+  const handleCategoryChange = (category: string) => {
+    setActiveCategory(category);
+    setCurrentPage(1);
+  };
 
   return (
     <main className="min-h-screen bg-[#f5f3f0]">
@@ -44,25 +58,25 @@ export default function BlogPage() {
 
           {/* Category Filters */}
           <div className="flex flex-wrap justify-center gap-4 mb-12">
-            {['all', 'game-dev', 'tech-art', 'tutorials'].map((category) => (
+            {categories.map((category) => (
               <button
-                key={category}
-                onClick={() => setActiveCategory(category)}
+                key={category.id}
+                onClick={() => handleCategoryChange(category.id)}
                 className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                  activeCategory === category
+                  activeCategory === category.id
                     ? 'bg-black text-white'
                     : 'bg-white text-gray-600 hover:bg-gray-100'
                 }`}
               >
-                {category.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                {category.name}
               </button>
             ))}
           </div>
 
           {/* Blog Posts Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
             <AnimatePresence>
-              {filteredPosts.map(post => (
+              {paginatedPosts.map(post => (
                 <motion.div
                   key={post.id}
                   layout
@@ -83,7 +97,7 @@ export default function BlogPage() {
                   <div className="p-6">
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm text-gray-500">{post.date}</span>
-                      <span className="text-sm text-gray-500">{post.readTime}</span>
+                      <span className="text-sm text-gray-500">{post.readTime} min read</span>
                     </div>
                     <h3 className="text-xl font-semibold mb-2">{post.title}</h3>
                     <p className="text-gray-600 mb-4">{post.excerpt}</p>
@@ -102,6 +116,47 @@ export default function BlogPage() {
               ))}
             </AnimatePresence>
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center gap-2 mt-8">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  currentPage === 1
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                Previous
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    currentPage === page
+                      ? 'bg-black text-white'
+                      : 'bg-white text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  currentPage === totalPages
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
