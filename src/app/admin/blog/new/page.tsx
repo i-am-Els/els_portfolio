@@ -49,6 +49,8 @@ export default function NewBlogPostPage() {
   const [error, setError] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [usedImages, setUsedImages] = useState<Set<string>>(new Set());
+  const [tempUploadedImages, setTempUploadedImages] = useState<Set<string>>(new Set());
   const router = useRouter();
   const supabase = createClientComponentClient();
 
@@ -130,10 +132,32 @@ export default function NewBlogPostPage() {
     }
   };
 
-  const uploadImage = async (file: File): Promise<string> => {
+  // Function to extract image URLs from content
+  const extractImageUrls = (content: string): Set<string> => {
+    const imgRegex = /<img[^>]+src="([^">]+)"/g;
+    const urls = new Set<string>();
+    let match;
+    while ((match = imgRegex.exec(content)) !== null) {
+      urls.add(match[1]);
+    }
+    return urls;
+  };
+
+  // Update used images when content changes
+  useEffect(() => {
+    if (post.content) {
+      const urls = extractImageUrls(post.content);
+      setUsedImages(urls);
+    }
+  }, [post.content]);
+
+  const uploadImage = async (file: File, isContentImage: boolean = false): Promise<string> => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const filePath = `blog-images/temp/thumbnail/${fileName}`;
+    
+    // For new posts, use a temp folder
+    const folder = isContentImage ? 'content' : 'thumbnail';
+    const filePath = `blog-images/temp/${folder}/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('blog-images')
@@ -143,9 +167,13 @@ export default function NewBlogPostPage() {
       throw uploadError;
     }
 
+    // Get the full public URL
     const { data: { publicUrl } } = supabase.storage
       .from('blog-images')
       .getPublicUrl(filePath);
+
+    // Track the uploaded image
+    setTempUploadedImages(prev => new Set([...prev, publicUrl]));
 
     return publicUrl;
   };
@@ -159,7 +187,7 @@ export default function NewBlogPostPage() {
       const file = input.files?.[0];
       if (file) {
         try {
-          const url = await uploadImage(file);
+          const url = await uploadImage(file, true);
           editor?.chain().focus().setImage({ src: url }).run();
         } catch (error) {
           console.error('Failed to upload image:', error);
@@ -170,27 +198,31 @@ export default function NewBlogPostPage() {
     input.click();
   };
 
-  const addLink = () => {
-    const url = window.prompt('Enter the URL');
-    if (url) {
-      editor?.chain().focus().setLink({ href: url }).run();
+  // Function to clean up unused images
+  const cleanupUnusedImages = async () => {
+    // Get all images in the content folder
+    const { data: contentImages, error: contentError } = await supabase.storage
+      .from('blog-images')
+      .list('blog-images/temp/content');
+
+    if (contentError) {
+      console.error('Error listing content images:', contentError);
+      return;
     }
-  };
 
-  const generateSlug = (title: string) => {
-    return title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
-  };
+    // Delete images that are not in the usedImages set
+    for (const image of contentImages) {
+      const imagePath = `blog-images/temp/content/${image.name}`;
+      const { data: { publicUrl } } = supabase.storage
+        .from('blog-images')
+        .getPublicUrl(imagePath);
 
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const title = e.target.value;
-    setPost(prev => ({
-      ...prev,
-      title,
-      slug: generateSlug(title)
-    }));
+      if (!usedImages.has(publicUrl)) {
+        await supabase.storage
+          .from('blog-images')
+          .remove([imagePath]);
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -257,16 +289,39 @@ export default function NewBlogPostPage() {
         if (updateError) throw updateError;
       }
 
-      // Insert selected categories into the join table
+      // Move content images from temp to actual post folder
+      const { data: tempContentImages, error: tempContentError } = await supabase.storage
+        .from('blog-images')
+        .list('blog-images/temp/content');
+
+      if (!tempContentError && tempContentImages) {
+        for (const image of tempContentImages) {
+          const oldPath = `blog-images/temp/content/${image.name}`;
+          const newPath = `blog-images/${data.id}/content/${image.name}`;
+          
+          await supabase.storage
+            .from('blog-images')
+            .copy(oldPath, newPath);
+          
+          await supabase.storage
+            .from('blog-images')
+            .remove([oldPath]);
+        }
+      }
+
+      // Clean up any unused images
+      await cleanupUnusedImages();
+
+      // Insert selected categories
       if (selectedCategoryIds.length > 0) {
-        const { error: joinError } = await supabase
+        const { error: categoryError } = await supabase
           .from('blog_post_categories')
           .insert(selectedCategoryIds.map(categoryId => ({
             blog_post_id: data.id,
             category_id: categoryId
           })));
 
-        if (joinError) throw joinError;
+        if (categoryError) throw categoryError;
       }
 
       router.push('/admin/blog');
@@ -275,6 +330,59 @@ export default function NewBlogPostPage() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  // Clean up temp images when component unmounts
+  useEffect(() => {
+    return () => {
+      // Clean up temp folder
+      const cleanup = async () => {
+        const { data: tempImages } = await supabase.storage
+          .from('blog-images')
+          .list('blog-images/temp');
+
+        if (tempImages) {
+          for (const image of tempImages) {
+            await supabase.storage
+              .from('blog-images')
+              .remove([`blog-images/temp/${image.name}`]);
+          }
+        }
+      };
+      cleanup();
+    };
+  }, []);
+
+  const getImageUrl = (path: string) => {
+    if (!path) return '';
+    if (path.startsWith('http')) return path;
+    const { data: { publicUrl } } = supabase.storage
+      .from('blog-images')
+      .getPublicUrl(path);
+    return publicUrl;
+  };
+
+  const addLink = () => {
+    const url = window.prompt('Enter the URL');
+    if (url) {
+      editor?.chain().focus().setLink({ href: url }).run();
+    }
+  };
+
+  const generateSlug = (title: string) => {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+  };
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const title = e.target.value;
+    setPost(prev => ({
+      ...prev,
+      title,
+      slug: generateSlug(title)
+    }));
   };
 
   return (
