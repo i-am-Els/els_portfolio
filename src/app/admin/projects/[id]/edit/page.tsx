@@ -26,7 +26,7 @@ interface Project {
 interface Category {
   id: string;
   name: string;
-  parent_id: string | null;
+  slug: string;
 }
 
 export default function EditProjectPage({ params }: { params: { id: string } }) {
@@ -97,7 +97,7 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
     try {
       const { data, error } = await supabase
         .from('categories')
-        .select('id, name, parent_id')
+        .select('id, name, slug, parent_id')
         .order('name');
 
       if (error) throw error;
@@ -133,9 +133,20 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
     }));
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Delete old image if it exists
+      if (project.image_url) {
+        const oldImagePath = project.image_url.split('/').pop();
+        if (oldImagePath) {
+          const oldPath = `project-images/${params.id}/thumbnail/${oldImagePath}`;
+          await supabase.storage
+            .from('project-images')
+            .remove([oldPath]);
+        }
+      }
+
       setImageFile(file);
       // Create preview URL
       const previewUrl = URL.createObjectURL(file);
@@ -146,9 +157,12 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
   const uploadImage = async (file: File): Promise<string> => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const filePath = `${fileName}`;
+    
+    // For new projects, use a temporary folder
+    const projectId = params.id === 'new' ? 'temp' : params.id;
+    const filePath = `project-images/${projectId}/thumbnail/${fileName}`;
 
-    const { error: uploadError, data } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('project-images')
       .upload(filePath, file);
 
@@ -201,7 +215,48 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
           .single();
 
         if (error) throw error;
-        router.push(`/admin/projects/${data.id}/edit`);
+
+        // If we uploaded an image to temp folder, move it to the project's folder
+        if (imageFile && imageUrl) {
+          const oldPath = `project-images/temp/thumbnail/${imageUrl.split('/').pop()}`;
+          const newPath = `project-images/${data.id}/thumbnail/${imageUrl.split('/').pop()}`;
+          
+          // Copy to new location
+          const { error: copyError } = await supabase.storage
+            .from('project-images')
+            .copy(oldPath, newPath);
+          
+          if (copyError) throw copyError;
+
+          // Delete from temp location
+          await supabase.storage
+            .from('project-images')
+            .remove([oldPath]);
+
+          // Update the image URL
+          const { data: { publicUrl } } = supabase.storage
+            .from('project-images')
+            .getPublicUrl(newPath);
+
+          await supabase
+            .from('projects')
+            .update({ image_url: publicUrl })
+            .eq('id', data.id);
+        }
+
+        // Insert selected categories
+        if (selectedCategories.length > 0) {
+          const { error: categoryError } = await supabase
+            .from('project_categories')
+            .insert(selectedCategories.map(categoryId => ({
+              project_id: data.id,
+              category_id: categoryId
+            })));
+
+          if (categoryError) throw categoryError;
+        }
+
+        router.push('/admin/projects');
       } else {
         const { error } = await supabase
           .from('projects')
@@ -209,6 +264,24 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
           .eq('id', params.id);
 
         if (error) throw error;
+
+        // Update categories
+        await supabase
+          .from('project_categories')
+          .delete()
+          .eq('project_id', params.id);
+
+        if (selectedCategories.length > 0) {
+          const { error: categoryError } = await supabase
+            .from('project_categories')
+            .insert(selectedCategories.map(categoryId => ({
+              project_id: params.id,
+              category_id: categoryId
+            })));
+
+          if (categoryError) throw categoryError;
+        }
+
         router.push('/admin/projects');
       }
     } catch (error: any) {

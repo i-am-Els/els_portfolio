@@ -133,7 +133,7 @@ export default function NewBlogPostPage() {
   const uploadImage = async (file: File): Promise<string> => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const filePath = `${fileName}`;
+    const filePath = `blog-images/temp/thumbnail/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('blog-images')
@@ -226,6 +226,32 @@ export default function NewBlogPostPage() {
 
       if (error) throw error;
 
+      // If we uploaded an image to temp folder, move it to the actual post folder
+      if (imageFile && imageUrl) {
+        const oldPath = `blog-images/temp/thumbnail/${imageUrl.split('/').pop()}`;
+        const newPath = `blog-images/${data.id}/thumbnail/${imageUrl.split('/').pop()}`;
+        
+        // Copy the file to the new location
+        const { error: copyError } = await supabase.storage
+          .from('blog-images')
+          .copy(oldPath, newPath);
+        
+        if (copyError) throw copyError;
+        
+        // Delete the temp file
+        await supabase.storage
+          .from('blog-images')
+          .remove([oldPath]);
+        
+        // Update the image URL in the database
+        const { error: updateError } = await supabase
+          .from('blog_posts')
+          .update({ image_url: newPath })
+          .eq('id', data.id);
+        
+        if (updateError) throw updateError;
+      }
+
       // Insert selected categories into the join table
       if (selectedCategoryIds.length > 0) {
         const { error: joinError } = await supabase
@@ -238,7 +264,7 @@ export default function NewBlogPostPage() {
         if (joinError) throw joinError;
       }
 
-      router.replace('/admin/blog');
+      router.push('/admin/blog');
     } catch (error: any) {
       setError(error.message);
     } finally {

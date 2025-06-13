@@ -14,7 +14,7 @@ import NextLink from 'next/link';
 import Image from 'next/image';
 
 interface Category {
-  id: number;
+  id: string;
   name: string;
   slug: string;
 }
@@ -30,6 +30,8 @@ interface BlogPost {
   read_time: number;
   category_id: number | null;
   tags: string[];
+  created_at?: string;
+  updated_at: string;
 }
 
 interface PageProps {
@@ -48,9 +50,11 @@ export default function EditBlogPostPage({ params }: PageProps) {
     published: false,
     read_time: 0,
     category_id: null,
-    tags: []
+    tags: [],
+    updated_at: new Date().toISOString()
   });
   const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,6 +98,14 @@ export default function EditBlogPostPage({ params }: PageProps) {
         if (data.image_url) {
           setImagePreview(data.image_url);
         }
+        // Fetch selected categories for this blog post
+        const { data: categoryData, error: categoryError } = await supabase
+          .from('blog_post_categories')
+          .select('category_id')
+          .eq('blog_post_id', params.id);
+
+        if (categoryError) throw categoryError;
+        setSelectedCategoryIds(categoryData.map(c => c.category_id.toString()));
       }
     } catch (error: any) {
       console.error('Error fetching post:', error);
@@ -152,9 +164,19 @@ export default function EditBlogPostPage({ params }: PageProps) {
     },
   });
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // If there's an existing image, delete it first
+      if (post.image_url) {
+        const oldPath = post.image_url.split('/').pop();
+        if (oldPath) {
+          await supabase.storage
+            .from('blog-images')
+            .remove([`blog-images/${params.id}/thumbnail/${oldPath}`]);
+        }
+      }
+      
       setImageFile(file);
       const previewUrl = URL.createObjectURL(file);
       setImagePreview(previewUrl);
@@ -164,7 +186,10 @@ export default function EditBlogPostPage({ params }: PageProps) {
   const uploadImage = async (file: File): Promise<string> => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const filePath = `${fileName}`;
+    
+    // For new posts, use a temp folder
+    const postId = params.id === 'new' ? 'temp' : params.id;
+    const filePath = `blog-images/${postId}/thumbnail/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('blog-images')
@@ -257,6 +282,50 @@ export default function EditBlogPostPage({ params }: PageProps) {
           .single();
 
         if (error) throw error;
+
+        // If we uploaded an image to temp folder, move it to the actual post folder
+        if (imageFile && imageUrl) {
+          const oldPath = `blog-images/temp/thumbnail/${imageUrl.split('/').pop()}`;
+          const newPath = `blog-images/${data.id}/thumbnail/${imageUrl.split('/').pop()}`;
+          
+          // Copy the file to the new location
+          const { error: copyError } = await supabase.storage
+            .from('blog-images')
+            .copy(oldPath, newPath);
+          
+          if (copyError) throw copyError;
+          
+          // Delete the temp file
+          await supabase.storage
+            .from('blog-images')
+            .remove([oldPath]);
+          
+          // Get the new absolute URL
+          const { data: { publicUrl } } = supabase.storage
+            .from('blog-images')
+            .getPublicUrl(newPath);
+          
+          // Update the image URL in the database with the new absolute URL
+          const { error: updateError } = await supabase
+            .from('blog_posts')
+            .update({ image_url: publicUrl })
+            .eq('id', data.id);
+          
+          if (updateError) throw updateError;
+        }
+
+        // Insert selected categories
+        if (selectedCategoryIds.length > 0) {
+          const { error: categoryError } = await supabase
+            .from('blog_post_categories')
+            .insert(selectedCategoryIds.map(categoryId => ({
+              blog_post_id: data.id,
+              category_id: categoryId
+            })));
+
+          if (categoryError) throw categoryError;
+        }
+
         router.push('/admin/blog');
       } else {
         const { error } = await supabase
@@ -265,6 +334,24 @@ export default function EditBlogPostPage({ params }: PageProps) {
           .eq('id', params.id);
 
         if (error) throw error;
+
+        // Update categories
+        await supabase
+          .from('blog_post_categories')
+          .delete()
+          .eq('blog_post_id', params.id);
+
+        if (selectedCategoryIds.length > 0) {
+          const { error: categoryError } = await supabase
+            .from('blog_post_categories')
+            .insert(selectedCategoryIds.map(categoryId => ({
+              blog_post_id: params.id,
+              category_id: categoryId
+            })));
+
+          if (categoryError) throw categoryError;
+        }
+
         router.push('/admin/blog');
       }
     } catch (error: any) {
@@ -274,22 +361,37 @@ export default function EditBlogPostPage({ params }: PageProps) {
     }
   };
 
+  const getImageUrl = (path: string) => {
+    if (!path) return '';
+    // If the path is already an absolute URL, return it as is
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return path;
+    }
+    // Otherwise, construct the absolute URL
+    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${path}`;
+  };
+
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900">
           {params.id === 'new' ? 'New Blog Post' : 'Edit Blog Post'}
         </h1>
         <NextLink
           href="/admin/blog"
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200"
         >
-          Back to Blog Posts
+          Back to Posts
         </NextLink>
       </div>
 
+      {error && (
+        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          {error}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Title */}
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-gray-700">
             Title
@@ -304,7 +406,6 @@ export default function EditBlogPostPage({ params }: PageProps) {
           />
         </div>
 
-        {/* Slug */}
         <div>
           <label htmlFor="slug" className="block text-sm font-medium text-gray-700">
             Slug
@@ -313,16 +414,12 @@ export default function EditBlogPostPage({ params }: PageProps) {
             type="text"
             id="slug"
             value={post.slug}
-            onChange={(e) => setPost(prev => ({ ...prev, slug: e.target.value }))}
+            onChange={(e) => setPost({ ...post, slug: e.target.value })}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm"
             required
           />
-          <p className="mt-1 text-sm text-gray-500">
-            The slug is automatically generated from the title, but you can edit it if needed.
-          </p>
         </div>
 
-        {/* Excerpt */}
         <div>
           <label htmlFor="excerpt" className="block text-sm font-medium text-gray-700">
             Excerpt
@@ -330,224 +427,27 @@ export default function EditBlogPostPage({ params }: PageProps) {
           <textarea
             id="excerpt"
             value={post.excerpt}
-            onChange={(e) => setPost(prev => ({ ...prev, excerpt: e.target.value }))}
+            onChange={(e) => setPost({ ...post, excerpt: e.target.value })}
             rows={3}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm"
             required
           />
         </div>
 
-        {/* Category Selection */}
         <div>
-          <label htmlFor="category" className="block text-sm font-medium text-gray-700">
-            Category
-          </label>
-          <select
-            id="category"
-            value={post.category_id || ''}
-            onChange={(e) => setPost(prev => ({ ...prev, category_id: e.target.value ? Number(e.target.value) : null }))}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm"
-          >
-            <option value="">Select a category</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Tags Input */}
-        <div>
-          <label htmlFor="tags" className="block text-sm font-medium text-gray-700">
-            Tags
-          </label>
-          <div className="mt-1">
-            <div className="flex flex-wrap gap-2 mb-2">
-              {post.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800"
-                >
-                  {tag}
-                  <button
-                    type="button"
-                    onClick={() => removeTag(tag)}
-                    className="ml-2 text-gray-500 hover:text-gray-700"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-            <input
-              type="text"
-              id="tags"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={handleTagInputKeyDown}
-              placeholder="Type a tag and press Enter"
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm"
-            />
-            <p className="mt-1 text-sm text-gray-500">
-              Press Enter to add a tag
-            </p>
-          </div>
-        </div>
-
-        {/* Featured Image */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Featured Image
-          </label>
-          <div className="mt-1 flex items-center space-x-4">
-            <div className="flex-shrink-0">
-              {(imagePreview || post.image_url) && (
-                <div className="relative h-32 w-32">
-                  <Image
-                    src={imagePreview || post.image_url || ''}
-                    alt="Post preview"
-                    fill
-                    className="object-cover rounded-lg"
-                  />
-                </div>
-              )}
-            </div>
-            <div className="flex-grow">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="block w-full text-sm text-gray-500
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded-lg file:border-0
-                  file:text-sm file:font-medium
-                  file:bg-white file:text-gray-700
-                  hover:file:bg-gray-50"
-              />
-              <p className="mt-1 text-sm text-gray-500">
-                Recommended size: 1200x800px. Max file size: 5MB
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Content Editor */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="content" className="block text-sm font-medium text-gray-700">
             Content
           </label>
-          <div className="mt-1 border border-gray-300 rounded-md shadow-sm">
-            <div className="border-b border-gray-300 p-2 bg-gray-50 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}
-                className={`p-2 rounded hover:bg-gray-200 ${editor?.isActive('heading', { level: 1 }) ? 'bg-gray-200' : ''}`}
-                title="Heading 1"
-              >
-                <Heading1 className="w-5 h-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
-                className={`p-2 rounded hover:bg-gray-200 ${editor?.isActive('heading', { level: 2 }) ? 'bg-gray-200' : ''}`}
-                title="Heading 2"
-              >
-                <Heading2 className="w-5 h-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}
-                className={`p-2 rounded hover:bg-gray-200 ${editor?.isActive('heading', { level: 3 }) ? 'bg-gray-200' : ''}`}
-                title="Heading 3"
-              >
-                <Heading3 className="w-5 h-5" />
-              </button>
-              <div className="w-px h-6 bg-gray-300 mx-1" />
-              <button
-                type="button"
-                onClick={() => editor?.chain().focus().toggleBold().run()}
-                className={`p-2 rounded hover:bg-gray-200 ${editor?.isActive('bold') ? 'bg-gray-200' : ''}`}
-                title="Bold"
-              >
-                <Bold className="w-5 h-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => editor?.chain().focus().toggleItalic().run()}
-                className={`p-2 rounded hover:bg-gray-200 ${editor?.isActive('italic') ? 'bg-gray-200' : ''}`}
-                title="Italic"
-              >
-                <Italic className="w-5 h-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => editor?.chain().focus().toggleStrike().run()}
-                className={`p-2 rounded hover:bg-gray-200 ${editor?.isActive('strike') ? 'bg-gray-200' : ''}`}
-                title="Strikethrough"
-              >
-                <Strikethrough className="w-5 h-5" />
-              </button>
-              <div className="w-px h-6 bg-gray-300 mx-1" />
-              <button
-                type="button"
-                onClick={() => editor?.chain().focus().toggleBulletList().run()}
-                className={`p-2 rounded hover:bg-gray-200 ${editor?.isActive('bulletList') ? 'bg-gray-200' : ''}`}
-                title="Bullet List"
-              >
-                <List className="w-5 h-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => editor?.chain().focus().toggleOrderedList().run()}
-                className={`p-2 rounded hover:bg-gray-200 ${editor?.isActive('orderedList') ? 'bg-gray-200' : ''}`}
-                title="Numbered List"
-              >
-                <ListOrdered className="w-5 h-5" />
-              </button>
-              <div className="w-px h-6 bg-gray-300 mx-1" />
-              <button
-                type="button"
-                onClick={() => editor?.chain().focus().toggleCodeBlock().run()}
-                className={`p-2 rounded hover:bg-gray-200 ${editor?.isActive('codeBlock') ? 'bg-gray-200' : ''}`}
-                title="Code Block"
-              >
-                <Code className="w-5 h-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => editor?.chain().focus().toggleBlockquote().run()}
-                className={`p-2 rounded hover:bg-gray-200 ${editor?.isActive('blockquote') ? 'bg-gray-200' : ''}`}
-                title="Blockquote"
-              >
-                <Quote className="w-5 h-5" />
-              </button>
-              <div className="w-px h-6 bg-gray-300 mx-1" />
-              <button
-                type="button"
-                onClick={addImage}
-                className="p-2 rounded hover:bg-gray-200"
-                title="Insert Image"
-              >
-                <ImageIcon className="w-5 h-5" />
-              </button>
-              <button
-                type="button"
-                onClick={addLink}
-                className={`p-2 rounded hover:bg-gray-200 ${editor?.isActive('link') ? 'bg-gray-200' : ''}`}
-                title="Insert Link"
-              >
-                <LinkIcon className="w-5 h-5" />
-              </button>
-            </div>
-            <EditorContent 
-              editor={editor} 
-              className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none p-4 min-h-[400px] focus:outline-none" 
-            />
-          </div>
+          <textarea
+            id="content"
+            value={post.content}
+            onChange={(e) => setPost({ ...post, content: e.target.value })}
+            rows={10}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm"
+            required
+          />
         </div>
 
-        {/* Read Time */}
         <div>
           <label htmlFor="read_time" className="block text-sm font-medium text-gray-700">
             Read Time (minutes)
@@ -556,46 +456,75 @@ export default function EditBlogPostPage({ params }: PageProps) {
             type="number"
             id="read_time"
             value={post.read_time}
-            onChange={(e) => setPost(prev => ({ ...prev, read_time: parseInt(e.target.value) || 0 }))}
+            onChange={(e) => setPost({ ...post, read_time: parseInt(e.target.value) })}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm"
-            min="0"
             required
           />
         </div>
 
-        {/* Published Status */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Categories</label>
+          <div className="mt-2 space-y-2">
+            {categories.map((category) => (
+              <label key={category.id} className="inline-flex items-center mr-4">
+                <input
+                  type="checkbox"
+                  checked={selectedCategoryIds.includes(category.id)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedCategoryIds([...selectedCategoryIds, category.id]);
+                    } else {
+                      setSelectedCategoryIds(selectedCategoryIds.filter(id => id !== category.id));
+                    }
+                  }}
+                  className="rounded border-gray-300 text-black focus:ring-black"
+                />
+                <span className="ml-2 text-sm text-gray-700">{category.name}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Thumbnail Image</label>
+          <div className="mt-2 flex items-center space-x-4">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
+            />
+            {(imagePreview || post.image_url) && (
+              <div className="relative w-20 h-20">
+                <Image
+                  src={imagePreview || (post.image_url ? getImageUrl(post.image_url) : '')}
+                  alt="Thumbnail preview"
+                  fill
+                  className="object-cover rounded"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="flex items-center">
           <input
             type="checkbox"
             id="published"
             checked={post.published}
-            onChange={(e) => setPost(prev => ({ ...prev, published: e.target.checked }))}
-            className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+            onChange={(e) => setPost({ ...post, published: e.target.checked })}
+            className="rounded border-gray-300 text-black focus:ring-black"
           />
-          <label htmlFor="published" className="ml-2 block text-sm text-gray-900">
-            Publish immediately
+          <label htmlFor="published" className="ml-2 text-sm text-gray-700">
+            Published
           </label>
         </div>
 
-        {error && (
-          <div className="text-red-600 text-sm">
-            {error}
-          </div>
-        )}
-
-        {/* Form Actions */}
-        <div className="flex justify-end space-x-3">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
-          >
-            Cancel
-          </button>
+        <div className="flex justify-end">
           <button
             type="submit"
             disabled={isSaving}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-50"
           >
             {isSaving ? 'Saving...' : 'Save Post'}
           </button>

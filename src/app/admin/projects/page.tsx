@@ -46,12 +46,28 @@ export default function ProjectsPage() {
     if (!confirm('Are you sure you want to delete this project?')) return;
 
     try {
+      // List all files in the project's thumbnail folder
+      const { data: files } = await supabase.storage
+        .from('project-images')
+        .list(`project-images/${id}/thumbnail`);
+
+      if (files && files.length > 0) {
+        // Delete all files in the thumbnail folder
+        const filesToDelete = files.map(file => `project-images/${id}/thumbnail/${file.name}`);
+        await supabase.storage
+          .from('project-images')
+          .remove(filesToDelete);
+      }
+
+      // Delete the project record
       const { error } = await supabase
         .from('projects')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
+
+      // Update the UI
       setProjects(projects.filter(project => project.id !== id));
     } catch (error) {
       console.error('Error deleting project:', error);
