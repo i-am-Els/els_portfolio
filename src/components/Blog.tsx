@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import Link from 'next/link';
 
 interface BlogPost {
   id: string;
@@ -172,40 +173,42 @@ export default function Blog() {
                   transition={{ duration: 0.3 }}
                   className="group relative bg-[#f5f3f0]/95 backdrop-blur-sm rounded-xl overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300"
                 >
-                  <div className="relative h-64 overflow-hidden">
-                    {post.image_url && (
-                      <Image
-                        src={getImageUrl(post.image_url)}
-                        alt={post.title}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
-                    )}
-                  </div>
-                  <div className="p-6">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm text-gray-500">
-                        {new Date(post.created_at).toLocaleDateString()}
-                      </span>
-                      <span className="text-sm text-gray-500">{post.read_time} min read</span>
+                  <Link href={`/blog/${post.slug}`} className="block">
+                    <div className="relative h-64 overflow-hidden">
+                      {post.image_url && (
+                        <Image
+                          src={getImageUrl(post.image_url)}
+                          alt={post.title}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                      )}
                     </div>
-                    <h3 className="text-2xl font-bold mb-3 text-gray-900 group-hover:text-primary transition-colors duration-300">
-                      {post.title}
-                    </h3>
-                    <p className="text-gray-700 mb-4 leading-relaxed">
-                      {post.excerpt}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {post.tags.map(tag => (
-                        <span
-                          key={tag}
-                          className="px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full border border-primary/20 hover:bg-primary/20 transition-colors duration-300"
-                        >
-                          {tag}
+                    <div className="p-6">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-gray-500">
+                          {new Date(post.created_at).toLocaleDateString()}
                         </span>
-                      ))}
+                        <span className="text-sm text-gray-500">{post.read_time} min read</span>
+                      </div>
+                      <h3 className="text-2xl font-bold mb-3 text-gray-900 group-hover:text-primary transition-colors duration-300">
+                        {post.title}
+                      </h3>
+                      <p className="text-gray-700 mb-4 leading-relaxed">
+                        {post.excerpt}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {post.tags.map(tag => (
+                          <span
+                            key={tag}
+                            className="px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full border border-primary/20 hover:bg-primary/20 transition-colors duration-300"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  </Link>
                 </motion.div>
               ))
             ) : (

@@ -22,6 +22,7 @@ interface Project {
       slug: string;
     };
   }[];
+  slug: string;
 }
 
 interface Category {
@@ -184,35 +185,37 @@ export default function Portfolio() {
                   transition={{ duration: 0.3 }}
                   className="group relative bg-[#f5f3f0]/95 backdrop-blur-sm rounded-xl overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300"
                 >
-                  <div className="relative h-64 overflow-hidden">
-                    {project.image_url && (
-                      <Image
-                        src={project.image_url}
-                        alt={project.title}
-                        fill
-                        className="object-cover transition-transform duration-300 group-hover:scale-110"
-                      />
-                    )}
-                  </div>
-                  <div className="p-6">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm text-gray-500">
-                        {new Date(project.created_at).toLocaleDateString()}
-                      </span>
+                  <Link href={`/portfolio/${project.slug}`} className="block">
+                    <div className="relative h-64 overflow-hidden">
+                      {project.image_url && (
+                        <Image
+                          src={project.image_url}
+                          alt={project.title}
+                          fill
+                          className="object-cover transition-transform duration-300 group-hover:scale-110"
+                        />
+                      )}
                     </div>
-                    <h3 className="text-xl font-semibold mb-2">{project.title}</h3>
-                    <p className="text-gray-600 mb-4">{project.description}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {project.technologies.map((tech, index) => (
-                        <span
-                          key={index}
-                          className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full"
-                        >
-                          {tech}
+                    <div className="p-6">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-gray-500">
+                          {new Date(project.created_at).toLocaleDateString()}
                         </span>
-                      ))}
+                      </div>
+                      <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors duration-300">{project.title}</h3>
+                      <p className="text-gray-600 mb-4">{project.description}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {project.technologies.map((tech, index) => (
+                          <span
+                            key={index}
+                            className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full"
+                          >
+                            {tech}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  </Link>
                 </motion.div>
               ))
             ) : (
