@@ -1,48 +1,116 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Navigation from '@/components/Navigation';
 import ContactFooter from '@/components/ContactFooter';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
-const experiences = [
-  {
-    title: 'Technical Artist',
-    company: 'Game Studio X',
-    period: '2022 - Present',
-    description: 'Developing shaders and tools for game development, optimizing art pipelines, and creating technical documentation.',
-    skills: ['Unreal Engine', 'HLSL', 'Python', 'Blender', 'Substance Designer']
-  },
-  {
-    title: 'Game Developer',
-    company: 'Indie Game Studio',
-    period: '2020 - 2022',
-    description: 'Worked on game mechanics, UI implementation, and performance optimization for mobile games.',
-    skills: ['Unity', 'C#', 'Game Design', 'UI/UX', 'Performance Optimization']
-  },
-  // Add more experiences as needed
-];
+interface Profile {
+  id: string;
+  bio: string;
+  short_bio: string;
+  profile_image_url: string;
+  email: string;
+  phone: string;
+  location: string;
+  github_url: string;
+  artstation_url: string;
+  linkedin_url: string;
+}
 
-const skills = [
-  {
-    category: 'Game Development',
-    items: ['Unreal Engine', 'Unity', 'C++', 'C#', 'Blueprints', 'Game Design']
-  },
-  {
-    category: 'Technical Art',
-    items: ['HLSL', 'Shader Development', 'Material Creation', 'Performance Optimization', 'Pipeline Development']
-  },
-  {
-    category: '3D & Art',
-    items: ['Blender', 'Substance Designer', 'Texturing', 'Modeling', 'Animation']
-  },
-  {
-    category: 'Tools & Scripting',
-    items: ['Python', 'MEL Script', 'MaxScript', 'Tool Development', 'Automation']
+interface Experience {
+  id: string;
+  title: string;
+  company: string;
+  period: string;
+  description: string;
+  skills: string[];
+  order_index: number;
+}
+
+interface Skill {
+  id: string;
+  category: string;
+  items: string[];
+  order_index: number;
+}
+
+export default function AboutPage() {
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [experiences, setExperiences] = useState<Experience[]>([]);
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const supabase = createClientComponentClient();
+
+  useEffect(() => {
+    fetchProfile();
+    fetchExperiences();
+    fetchSkills();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profile')
+        .select('*')
+        .single();
+
+      if (error) throw error;
+      setProfile(data);
+    } catch (error: any) {
+      setError(error.message);
+    }
+  };
+
+  const fetchExperiences = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('experiences')
+        .select('*')
+        .order('order_index', { ascending: true });
+
+      if (error) throw error;
+      setExperiences(data || []);
+    } catch (error: any) {
+      setError(error.message);
+    }
+  };
+
+  const fetchSkills = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('skills')
+        .select('*')
+        .order('order_index', { ascending: true });
+
+      if (error) throw error;
+      setSkills(data || []);
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#f5f3f0] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-black"></div>
+      </div>
+    );
   }
-];
 
-export default function ContactPage() {
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#f5f3f0] flex items-center justify-center">
+        <div className="text-red-600">Error: {error}</div>
+      </div>
+    );
+  }
+
   return (
     <main className="min-h-screen relative">
       <Image
@@ -60,7 +128,7 @@ export default function ContactPage() {
           <div className="text-center mb-16">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">Who Am I</h1>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              Game Developer & Technical Artist passionate about creating immersive experiences
+              {profile?.short_bio}
             </p>
           </div>
 
@@ -73,19 +141,13 @@ export default function ContactPage() {
                 transition={{ duration: 0.5 }}
               >
                 <h2 className="text-3xl font-bold mb-6">Who I Am</h2>
-                <p className="text-gray-600 mb-4">
-                  I'm a passionate game developer and technical artist with a strong focus on creating
-                  immersive gaming experiences. My expertise lies in bridging the gap between art and
-                  technology, ensuring both visual quality and technical performance.
-                </p>
-                <p className="text-gray-600 mb-4">
-                  With a background in both game development and technical art, I bring a unique
-                  perspective to projects, combining creative vision with technical expertise.
-                </p>
-                <p className="text-gray-600">
-                  I'm constantly learning and exploring new technologies to push the boundaries
-                  of what's possible in game development.
-                </p>
+                <div className="prose prose-lg">
+                  {profile?.bio?.split('\n').map((paragraph, index) => (
+                    <p key={index} className="text-gray-600 mb-4">
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
               </motion.div>
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
@@ -94,7 +156,7 @@ export default function ContactPage() {
                 className="relative h-[400px] rounded-xl overflow-hidden"
               >
                 <Image
-                  src="/profile.jpg"
+                  src={profile?.profile_image_url || '/profile.jpg'}
                   alt="Eniola Olawale"
                   fill
                   className="object-cover"
@@ -109,7 +171,7 @@ export default function ContactPage() {
             <div className="space-y-8">
               {experiences.map((exp, index) => (
                 <motion.div
-                  key={index}
+                  key={exp.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
@@ -144,7 +206,7 @@ export default function ContactPage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
               {skills.map((skillGroup, index) => (
                 <motion.div
-                  key={index}
+                  key={skillGroup.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}

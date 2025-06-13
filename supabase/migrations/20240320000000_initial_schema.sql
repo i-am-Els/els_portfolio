@@ -1,7 +1,7 @@
 -- Enable UUID extension
 create extension if not exists "uuid-ossp";
 
--- Create categories table with parent_id for hierarchical structure
+-- Create categories table
 create table if not exists categories (
   id uuid primary key default uuid_generate_v4(),
   created_at timestamp with time zone default now(),
@@ -49,176 +49,273 @@ create table if not exists blog_posts (
   tags text[] default '{}'
 );
 
--- Create blog_post_categories join table
+-- Join tables
 create table if not exists blog_post_categories (
   blog_post_id uuid references blog_posts(id) on delete cascade,
   category_id uuid references categories(id) on delete cascade,
   primary key (blog_post_id, category_id)
 );
 
--- Create project_categories join table
 create table if not exists project_categories (
   project_id uuid references projects(id) on delete cascade,
   category_id uuid references categories(id) on delete cascade,
   primary key (project_id, category_id)
 );
 
--- Enable RLS on all tables
-alter table categories enable row level security;
-alter table projects enable row level security;
-alter table blog_posts enable row level security;
-alter table blog_post_categories enable row level security;
-alter table project_categories enable row level security;
+-- New profile-related tables
+create table if not exists profile (
+  id uuid primary key default uuid_generate_v4(),
+  bio text,
+  short_bio text,
+  profile_image_url text,
+  email text,
+  phone text,
+  location text,
+  github_url text,
+  artstation_url text,
+  linkedin_url text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
 
--- Add read_time column to blog_posts table if it doesn't exist
-DO $$ 
-BEGIN 
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'blog_posts' AND column_name = 'read_time') THEN
-    ALTER TABLE blog_posts ADD COLUMN read_time integer NOT NULL DEFAULT 0;
-  END IF;
-END $$;
+create table if not exists experiences (
+  id uuid primary key default uuid_generate_v4(),
+  title text not null,
+  company text not null,
+  period text not null,
+  description text not null,
+  skills text[] not null,
+  order_index integer not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
 
--- Add published column if it doesn't exist
-ALTER TABLE blog_posts
-ADD COLUMN IF NOT EXISTS published boolean NOT NULL DEFAULT false;
+create table if not exists skills (
+  id uuid primary key default uuid_generate_v4(),
+  category text not null,
+  items text[] not null,
+  order_index integer not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
 
--- Drop existing policies if they exist
-do $$ 
+-- Enable RLS
+alter table if exists categories enable row level security;
+alter table if exists projects enable row level security;
+alter table if exists blog_posts enable row level security;
+alter table if exists blog_post_categories enable row level security;
+alter table if exists project_categories enable row level security;
+alter table if exists profile enable row level security;
+alter table if exists experiences enable row level security;
+alter table if exists skills enable row level security;
+
+-- Add read_time column if missing
+do $$
 begin
-  -- Categories policies
-  drop policy if exists "Allow public read access on categories" on categories;
-  drop policy if exists "Allow authenticated users to insert into categories" on categories;
-  drop policy if exists "Allow authenticated users to update categories" on categories;
-  drop policy if exists "Allow authenticated users to delete from categories" on categories;
-
-  -- Projects policies
-  drop policy if exists "Allow public read access on projects" on projects;
-  drop policy if exists "Allow authenticated users to insert into projects" on projects;
-  drop policy if exists "Allow authenticated users to update projects" on projects;
-  drop policy if exists "Allow authenticated users to delete from projects" on projects;
-
-  -- Blog posts policies
-  drop policy if exists "Allow public read access on blog_posts" on blog_posts;
-  drop policy if exists "Allow authenticated users to insert into blog_posts" on blog_posts;
-  drop policy if exists "Allow authenticated users to update blog_posts" on blog_posts;
-  drop policy if exists "Allow authenticated users to delete from blog_posts" on blog_posts;
-
-  -- Blog post categories policies
-  drop policy if exists "Allow public read access on blog_post_categories" on blog_post_categories;
-  drop policy if exists "Allow authenticated users to insert into blog_post_categories" on blog_post_categories;
-  drop policy if exists "Allow authenticated users to update blog_post_categories" on blog_post_categories;
-  drop policy if exists "Allow authenticated users to delete from blog_post_categories" on blog_post_categories;
-
-  -- Project categories policies
-  drop policy if exists "Allow public read access on project_categories" on project_categories;
-  drop policy if exists "Allow authenticated users to insert into project_categories" on project_categories;
-  drop policy if exists "Allow authenticated users to update project_categories" on project_categories;
-  drop policy if exists "Allow authenticated users to delete from project_categories" on project_categories;
-
-  -- Storage policies
-  drop policy if exists "Allow public read access on project-images" on storage.objects;
-  drop policy if exists "Allow authenticated users to upload project-images" on storage.objects;
-  drop policy if exists "Allow public read access on blog-images" on storage.objects;
-  drop policy if exists "Allow authenticated users to upload blog-images" on storage.objects;
+  if not exists (
+    select 1 from information_schema.columns 
+    where table_name='blog_posts' and column_name='read_time'
+  ) then
+    alter table blog_posts add column read_time integer not null default 0;
+  end if;
 end $$;
 
--- Create policies for categories
+-- Recreate update_updated_at_column() safely
+create or replace function update_updated_at_column()
+returns trigger as $$
+begin
+  new.updated_at = timezone('utc'::text, now());
+  return new;
+end;
+$$ language plpgsql;
+
+-- Safely create triggers (only if not already created)
+do $$
+begin
+  if not exists (select 1 from pg_trigger where tgname = 'update_categories_updated_at') then
+    create trigger update_categories_updated_at
+    before update on categories
+    for each row
+    execute function update_updated_at_column();
+  end if;
+
+  if not exists (select 1 from pg_trigger where tgname = 'update_projects_updated_at') then
+    create trigger update_projects_updated_at
+    before update on projects
+    for each row
+    execute function update_updated_at_column();
+  end if;
+
+  if not exists (select 1 from pg_trigger where tgname = 'update_blog_posts_updated_at') then
+    create trigger update_blog_posts_updated_at
+    before update on blog_posts
+    for each row
+    execute function update_updated_at_column();
+  end if;
+
+  if not exists (select 1 from pg_trigger where tgname = 'update_profile_updated_at') then
+    create trigger update_profile_updated_at
+    before update on profile
+    for each row
+    execute function update_updated_at_column();
+  end if;
+
+  if not exists (select 1 from pg_trigger where tgname = 'update_experiences_updated_at') then
+    create trigger update_experiences_updated_at
+    before update on experiences
+    for each row
+    execute function update_updated_at_column();
+  end if;
+
+  if not exists (select 1 from pg_trigger where tgname = 'update_skills_updated_at') then
+    create trigger update_skills_updated_at
+    before update on skills
+    for each row
+    execute function update_updated_at_column();
+  end if;
+end $$;
+
+-- Drop existing policies and recreate
+do $$
+declare
+  tbl text;
+begin
+  -- Table names to process
+  for tbl in
+    select unnest(array[
+      'categories', 'projects', 'blog_posts', 
+      'blog_post_categories', 'project_categories', 
+      'profile', 'experiences', 'skills'
+    ])
+  loop
+    -- Drop all policies from the table
+    execute format('drop policy if exists "Allow public read access on %1$I" on %1$I', tbl);
+    execute format('drop policy if exists "Allow authenticated users to insert into %1$I" on %1$I', tbl);
+    execute format('drop policy if exists "Allow authenticated users to update %1$I" on %1$I', tbl);
+    execute format('drop policy if exists "Allow authenticated users to delete from %1$I" on %1$I', tbl);
+  end loop;
+end $$;
+
+
+-- Categories Policies
+drop policy if exists "Allow public read access on categories" on categories;
+drop policy if exists "Allow authenticated users to insert into categories" on categories;
+drop policy if exists "Allow authenticated users to update categories" on categories;
+drop policy if exists "Allow authenticated users to delete from categories" on categories;
+
 create policy "Allow public read access on categories"
-  on categories for select
-  using (true);
-
+  on categories for select using (true);
 create policy "Allow authenticated users to insert into categories"
-  on categories for insert
-  with check (auth.role() = 'authenticated');
-
+  on categories for insert with check (auth.role() = 'authenticated');
 create policy "Allow authenticated users to update categories"
-  on categories for update
-  using (auth.role() = 'authenticated');
-
+  on categories for update using (auth.role() = 'authenticated');
 create policy "Allow authenticated users to delete from categories"
-  on categories for delete
-  using (auth.role() = 'authenticated');
+  on categories for delete using (auth.role() = 'authenticated');
 
--- Create policies for projects
+-- Projects Policies
+drop policy if exists "Allow public read access on projects" on projects;
+drop policy if exists "Allow authenticated users to insert into projects" on projects;
+drop policy if exists "Allow authenticated users to update projects" on projects;
+drop policy if exists "Allow authenticated users to delete from projects" on projects;
+
 create policy "Allow public read access on projects"
-  on projects for select
-  using (true);
-
+  on projects for select using (true);
 create policy "Allow authenticated users to insert into projects"
-  on projects for insert
-  with check (auth.role() = 'authenticated');
-
+  on projects for insert with check (auth.role() = 'authenticated');
 create policy "Allow authenticated users to update projects"
-  on projects for update
-  using (auth.role() = 'authenticated');
-
+  on projects for update using (auth.role() = 'authenticated');
 create policy "Allow authenticated users to delete from projects"
-  on projects for delete
-  using (auth.role() = 'authenticated');
+  on projects for delete using (auth.role() = 'authenticated');
 
--- Create policies for blog_posts
+-- Blog Posts Policies
+drop policy if exists "Allow public read access on blog_posts" on blog_posts;
+drop policy if exists "Allow authenticated users to insert into blog_posts" on blog_posts;
+drop policy if exists "Allow authenticated users to update blog_posts" on blog_posts;
+drop policy if exists "Allow authenticated users to delete from blog_posts" on blog_posts;
+
 create policy "Allow public read access on blog_posts"
-  on blog_posts for select
-  using (true);
-
+  on blog_posts for select using (true);
 create policy "Allow authenticated users to insert into blog_posts"
-  on blog_posts for insert
-  with check (auth.role() = 'authenticated');
-
+  on blog_posts for insert with check (auth.role() = 'authenticated');
 create policy "Allow authenticated users to update blog_posts"
-  on blog_posts for update
-  using (auth.role() = 'authenticated');
-
+  on blog_posts for update using (auth.role() = 'authenticated');
 create policy "Allow authenticated users to delete from blog_posts"
-  on blog_posts for delete
-  using (auth.role() = 'authenticated');
+  on blog_posts for delete using (auth.role() = 'authenticated');
 
--- Create policies for blog_post_categories
+-- Join Tables Policies
+drop policy if exists "Allow public read access on blog_post_categories" on blog_post_categories;
+drop policy if exists "Allow authenticated users to insert into blog_post_categories" on blog_post_categories;
+drop policy if exists "Allow authenticated users to update blog_post_categories" on blog_post_categories;
+drop policy if exists "Allow authenticated users to delete from blog_post_categories" on blog_post_categories;
+
 create policy "Allow public read access on blog_post_categories"
-  on blog_post_categories for select
-  using (true);
-
+  on blog_post_categories for select using (true);
 create policy "Allow authenticated users to insert into blog_post_categories"
-  on blog_post_categories for insert
-  with check (auth.role() = 'authenticated');
-
+  on blog_post_categories for insert with check (auth.role() = 'authenticated');
 create policy "Allow authenticated users to update blog_post_categories"
-  on blog_post_categories for update
-  using (auth.role() = 'authenticated');
-
+  on blog_post_categories for update using (auth.role() = 'authenticated');
 create policy "Allow authenticated users to delete from blog_post_categories"
-  on blog_post_categories for delete
-  using (auth.role() = 'authenticated');
+  on blog_post_categories for delete using (auth.role() = 'authenticated');
 
--- Create policies for project_categories
+drop policy if exists "Allow public read access on project_categories" on project_categories;
+drop policy if exists "Allow authenticated users to insert into project_categories" on project_categories;
+drop policy if exists "Allow authenticated users to update project_categories" on project_categories;
+drop policy if exists "Allow authenticated users to delete from project_categories" on project_categories;
+
 create policy "Allow public read access on project_categories"
-  on project_categories for select
-  using (true);
-
+  on project_categories for select using (true);
 create policy "Allow authenticated users to insert into project_categories"
-  on project_categories for insert
-  with check (auth.role() = 'authenticated');
-
+  on project_categories for insert with check (auth.role() = 'authenticated');
 create policy "Allow authenticated users to update project_categories"
-  on project_categories for update
-  using (auth.role() = 'authenticated');
-
+  on project_categories for update using (auth.role() = 'authenticated');
 create policy "Allow authenticated users to delete from project_categories"
-  on project_categories for delete
-  using (auth.role() = 'authenticated');
+  on project_categories for delete using (auth.role() = 'authenticated');
 
--- Create storage buckets for images
+-- Profile
+drop policy if exists "Profile is viewable by everyone" on profile;
+drop policy if exists "Profile is editable by authenticated users" on profile;
+
+create policy "Profile is viewable by everyone"
+  on profile for select using (true);
+create policy "Profile is editable by authenticated users"
+  on profile for update using (auth.role() = 'authenticated');
+
+-- Experiences
+drop policy if exists "Experiences are viewable by everyone" on experiences;
+drop policy if exists "Experiences are editable by authenticated users" on experiences;
+
+create policy "Experiences are viewable by everyone"
+  on experiences for select using (true);
+create policy "Experiences are editable by authenticated users"
+  on experiences for all using (auth.role() = 'authenticated');
+
+-- Skills
+drop policy if exists "Skills are viewable by everyone" on skills;
+drop policy if exists "Skills are editable by authenticated users" on skills;
+
+create policy "Skills are viewable by everyone"
+  on skills for select using (true);
+create policy "Skills are editable by authenticated users"
+  on skills for all using (auth.role() = 'authenticated');
+
+-- Storage Buckets
 do $$
 begin
   if not exists (select 1 from storage.buckets where id = 'project-images') then
     insert into storage.buckets (id, name, public) values ('project-images', 'project-images', true);
   end if;
+
   if not exists (select 1 from storage.buckets where id = 'blog-images') then
     insert into storage.buckets (id, name, public) values ('blog-images', 'blog-images', true);
   end if;
 end $$;
 
--- Create storage policies
+-- Storage Policies
+drop policy if exists "Allow public read access on project-images" on storage.objects;
+drop policy if exists "Allow authenticated users to upload project-images" on storage.objects;
+drop policy if exists "Allow public read access on blog-images" on storage.objects;
+drop policy if exists "Allow authenticated users to upload blog-images" on storage.objects;
+
 create policy "Allow public read access on project-images"
   on storage.objects for select
   using (bucket_id = 'project-images');
@@ -234,28 +331,3 @@ create policy "Allow public read access on blog-images"
 create policy "Allow authenticated users to upload blog-images"
   on storage.objects for insert
   with check (bucket_id = 'blog-images' and auth.role() = 'authenticated');
-
--- Create function to update updated_at timestamp
-create or replace function update_updated_at_column()
-returns trigger as $$
-begin
-  new.updated_at = now();
-  return new;
-end;
-$$ language plpgsql;
-
--- Create triggers for updated_at
-create trigger update_categories_updated_at
-  before update on categories
-  for each row
-  execute function update_updated_at_column();
-
-create trigger update_projects_updated_at
-  before update on projects
-  for each row
-  execute function update_updated_at_column();
-
-create trigger update_blog_posts_updated_at
-  before update on blog_posts
-  for each row
-  execute function update_updated_at_column();

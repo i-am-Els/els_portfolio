@@ -123,7 +123,7 @@ export default function Blog() {
   }
 
   return (
-    <section id="blog" className="py-16 bg-[#f5f3f0]">
+    <section id="blog" className="py-16 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/blog-bg.jpg')" }}>
       <div className="max-w-6xl mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold mb-4">Latest Blog Posts</h2>
