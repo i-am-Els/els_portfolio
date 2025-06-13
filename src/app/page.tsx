@@ -81,7 +81,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-5xl md:text-7xl font-bold mb-6 text-gray-900"
+            className="text-5xl md:text-7xl font-bold mb-6 text-gray-900 [text-shadow:_2px_2px_0_#e5e7eb,_-2px_-2px_0_#e5e7eb,_2px_-2px_0_#e5e7eb,_-2px_2px_0_#e5e7eb]"
           >
             Technical Artist & Game Developer
           </motion.h1>

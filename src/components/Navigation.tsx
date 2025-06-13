@@ -23,7 +23,7 @@ export default function Navigation() {
     { href: '/', label: 'Home' },
     { href: '/portfolio', label: 'Portfolio' },
     { href: '/blog', label: 'Blog' },
-    { href: '/contact', label: 'Contact' },
+    { href: '/about', label: 'About Me' },
   ];
 
   return (

@@ -181,8 +181,8 @@ export default function BlogPage() {
           {/* Blog Posts Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <AnimatePresence>
-              {filteredPosts.length > 0 ? (
-                filteredPosts.map(post => (
+              {paginatedPosts.length > 0 ? (
+                paginatedPosts.map(post => (
                   <motion.div
                     key={post.id}
                     layout
@@ -236,23 +236,42 @@ export default function BlogPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex justify-center mt-12">
-              <div className="flex space-x-2">
+            <div className="flex justify-center gap-2 mt-8">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  currentPage === 1
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                Previous
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                 <button
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="px-4 py-2 rounded-md bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    currentPage === page
+                      ? 'bg-black text-white'
+                      : 'bg-white text-gray-600 hover:bg-gray-100'
+                  }`}
                 >
-                  Previous
+                  {page}
                 </button>
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="px-4 py-2 rounded-md bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </div>
+              ))}
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  currentPage === totalPages
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                Next
+              </button>
             </div>
           )}
         </div>
