@@ -66,6 +66,7 @@ export default function PortfolioPage() {
             )
           )
         `)
+        .eq('published', true)
         .order('order_index', { ascending: true })
         .order('created_at', { ascending: false });
 
@@ -139,7 +140,7 @@ export default function PortfolioPage() {
       <Navigation />
       
       <div className="pt-24 pb-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto px-4">
           {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">Portfolio</h1>
@@ -160,7 +161,7 @@ export default function PortfolioPage() {
             >
               All
             </button>
-            {categories.map((category) => (
+            {filteredProjects.length > 0 && categories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => handleCategoryChange(category.slug)}
@@ -178,70 +179,53 @@ export default function PortfolioPage() {
           {/* Projects Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <AnimatePresence>
-              {paginatedProjects.map(project => (
-                <motion.div
-                  key={project.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.3 }}
-                  className="group relative bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300"
-                >
-                  {project.image_url && (
+              {filteredProjects.length > 0 ? (
+                filteredProjects.map(project => (
+                  <motion.div
+                    key={project.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.3 }}
+                    className="group relative bg-[#f5f3f0]/95 backdrop-blur-sm rounded-xl overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300"
+                  >
                     <div className="relative h-64 overflow-hidden">
-                      <Image
-                        src={project.image_url}
-                        alt={project.title}
-                        fill
-                        className="object-cover transition-transform duration-300 group-hover:scale-110"
-                      />
+                      {project.image_url && (
+                        <Image
+                          src={project.image_url}
+                          alt={project.title}
+                          fill
+                          className="object-cover transition-transform duration-300 group-hover:scale-110"
+                        />
+                      )}
                     </div>
-                  )}
-                  
-                  <div className="p-6">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm text-gray-500">
-                        {new Date(project.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <h3 className="text-xl font-semibold mb-2">{project.title}</h3>
-                    <p className="text-gray-600 mb-4">{project.description}</p>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {project.technologies.map((tech, index) => (
-                        <span
-                          key={index}
-                          className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full"
-                        >
-                          {tech}
+                    <div className="p-6">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-gray-500">
+                          {new Date(project.created_at).toLocaleDateString()}
                         </span>
-                      ))}
+                      </div>
+                      <h3 className="text-xl font-semibold mb-2">{project.title}</h3>
+                      <p className="text-gray-600 mb-4">{project.description}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {project.technologies.map((tech, index) => (
+                          <span
+                            key={index}
+                            className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full"
+                          >
+                            {tech}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                    <div className="flex gap-4">
-                      {project.project_url && (
-                        <a
-                          href={project.project_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:text-primary/80 transition-colors"
-                        >
-                          View Project
-                        </a>
-                      )}
-                      {project.github_url && (
-                        <a
-                          href={project.github_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:text-primary/80 transition-colors"
-                        >
-                          View Code
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                ))
+              ) : (
+                <div className="col-span-full flex items-center justify-center min-h-[400px]">
+                  <p className="text-xl text-gray-600">Coming Soon</p>
+                </div>
+              )}
             </AnimatePresence>
           </div>
 

@@ -1,38 +1,104 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-import { projects } from '@/data/projects';
-import { categories, categoryTagMap } from '@/data/categories';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
-type Project = {
-  id: number;
+interface Project {
+  id: string;
   title: string;
   description: string;
-  image: string;
-  tags: string[];
-  demoUrl?: string;
-  githubUrl?: string;
-};
+  image_url: string | null;
+  project_url: string | null;
+  github_url: string | null;
+  technologies: string[];
+  created_at: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  order_index: number;
+}
 
 export default function Portfolio() {
   const [activeCategory, setActiveCategory] = useState('all');
-  
-  // Get only the 3 most recent projects
-  const recentProjects = projects.slice(0, 3);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const supabase = createClientComponentClient();
+
+  useEffect(() => {
+    fetchProjects();
+    fetchCategories();
+  }, []);
+
+  const fetchProjects = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('published', true)
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      if (error) throw error;
+      setProjects(data || []);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('order_index', { ascending: true });
+
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
 
   const filteredProjects = activeCategory === 'all' 
-    ? recentProjects 
-    : recentProjects.filter(project => {
-        const relatedTags = categoryTagMap[activeCategory] || [];
-        
-        return project.tags.some(tag => 
-          relatedTags.some(relatedTag => 
-            tag.toLowerCase().includes(relatedTag.toLowerCase())
-          )
-        );
-      });
+    ? projects 
+    : projects.filter(project => 
+        project.technologies.some(tech => 
+          tech.toLowerCase().includes(activeCategory.toLowerCase())
+        )
+      );
+
+  if (isLoading) {
+    return (
+      <section id="portfolio" className="relative w-full">
+        <div className="absolute inset-0 w-full h-full">
+          <div className="relative w-full h-full">
+            <Image
+              src="/portfolio-bg-3.jpg"
+              alt="Portfolio Background"
+              fill
+              className="object-cover object-center"
+              quality={100}
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/50 to-background" />
+          </div>
+        </div>
+        <div className="relative container mx-auto px-4 py-16">
+          <div className="flex justify-center items-center min-h-[400px]">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="portfolio" className="relative w-full">
@@ -52,46 +118,46 @@ export default function Portfolio() {
       </div>
 
       {/* Content Container */}
-      <div className="relative z-10 py-24">
-        <div className="max-w-6xl mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-16"
+      <div className="relative max-w-6xl mx-auto px-4 py-16">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold mb-4">Featured Projects</h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Explore my latest technical art and game development projects
+          </p>
+        </div>
+
+        {/* Category Filters */}
+        <div className="flex flex-wrap justify-center gap-4 mb-12">
+          <button
+            onClick={() => setActiveCategory('all')}
+            className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+              activeCategory === 'all'
+                ? 'bg-black text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-100'
+            }`}
           >
-            <h2 className="text-5xl md:text-6xl font-extrabold mb-4 text-gray-900 tracking-tight">
-              Portfolio
-            </h2>
-            <p className="text-xl text-gray-700 max-w-3xl mx-auto font-medium">
-              A showcase of my technical art and game development projects
-            </p>
-          </motion.div>
+            All
+          </button>
+          {filteredProjects.length > 0 && categories.map((category) => (
+            <button
+              key={category.id}
+              onClick={() => setActiveCategory(category.slug)}
+              className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                activeCategory === category.slug
+                  ? 'bg-black text-white'
+                  : 'bg-white text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              {category.name}
+            </button>
+          ))}
+        </div>
 
-          {/* Category filters */}
-          <div className="flex flex-wrap justify-center gap-4 mb-12">
-            {categories.map(category => (
-              <motion.button
-                key={category.id}
-                onClick={() => setActiveCategory(category.id)}
-                className={`px-6 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
-                  activeCategory === category.id
-                    ? 'bg-gray-900 text-white shadow-lg'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
-                }`}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                {category.name}
-              </motion.button>
-            ))}
-          </div>
-
-          {/* Projects Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-            <AnimatePresence>
-              {filteredProjects.map(project => (
+        {/* Projects Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <AnimatePresence>
+            {filteredProjects.length > 0 ? (
+              filteredProjects.map(project => (
                 <motion.div
                   key={project.id}
                   layout
@@ -102,83 +168,42 @@ export default function Portfolio() {
                   className="group relative bg-[#f5f3f0]/95 backdrop-blur-sm rounded-xl overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300"
                 >
                   <div className="relative h-64 overflow-hidden">
-                    <Image
-                      src={project.image}
-                      alt={project.title}
-                      fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    {project.image_url && (
+                      <Image
+                        src={project.image_url}
+                        alt={project.title}
+                        fill
+                        className="object-cover transition-transform duration-300 group-hover:scale-110"
+                      />
+                    )}
                   </div>
                   <div className="p-6">
-                    <h3 className="text-2xl font-bold mb-3 text-gray-900 group-hover:text-primary transition-colors duration-300">
-                      {project.title}
-                    </h3>
-                    <p className="text-gray-700 mb-4 leading-relaxed">
-                      {project.description}
-                    </p>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm text-gray-500">
+                        {new Date(project.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2">{project.title}</h3>
+                    <p className="text-gray-600 mb-4">{project.description}</p>
                     <div className="flex flex-wrap gap-2">
-                      {project.tags.map(tag => (
+                      {project.technologies.map((tech, index) => (
                         <span
-                          key={tag}
-                          className="px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full border border-primary/20 hover:bg-primary/20 transition-colors duration-300"
+                          key={index}
+                          className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full"
                         >
-                          {tag}
+                          {tech}
                         </span>
                       ))}
                     </div>
-                    <div className="mt-4 flex gap-4">
-                      {project.demoUrl && (
-                        <a
-                          href={project.demoUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-gray-700 hover:text-primary transition-colors duration-300"
-                        >
-                          View Demo
-                        </a>
-                      )}
-                      {project.githubUrl && (
-                        <a
-                          href={project.githubUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-gray-700 hover:text-primary transition-colors duration-300"
-                        >
-                          View Code
-                        </a>
-                      )}
-                    </div>
                   </div>
                 </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-
-          {/* View All Button */}
-          <div className="text-center">
-            <motion.a
-              href="/portfolio"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="inline-flex items-center px-8 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors duration-300"
-            >
-              View All Projects
-              <svg
-                className="w-5 h-5 ml-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 8l4 4m0 0l-4 4m4-4H3"
-                />
-              </svg>
-            </motion.a>
-          </div>
+              ))
+            ) : (
+              <div className="col-span-full flex items-center justify-center min-h-[400px]">
+                <p className="text-xl text-gray-600">Coming Soon</p>
+              </div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </section>

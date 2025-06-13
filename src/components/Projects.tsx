@@ -4,70 +4,51 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { categories, categoryTagMap } from '@/data/categories';
 
-interface BlogPost {
+interface Project {
   id: string;
   title: string;
   slug: string;
-  excerpt: string;
-  content: string;
+  description: string;
   image_url: string | null;
+  project_url: string | null;
+  github_url: string | null;
+  technologies: string[];
   published: boolean;
-  read_time: number;
-  tags: string[];
+  featured: boolean;
+  order_index: number;
   created_at: string;
   updated_at: string;
 }
 
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  order_index: number;
-}
-
-export default function Blog() {
+export default function Projects() {
   const [activeCategory, setActiveCategory] = useState('all');
-  const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const supabase = createClientComponentClient();
 
   useEffect(() => {
-    fetchPosts();
-    fetchCategories();
+    fetchProjects();
   }, []);
 
-  const fetchPosts = async () => {
+  const fetchProjects = async () => {
     try {
       const { data, error } = await supabase
-        .from('blog_posts')
+        .from('projects')
         .select('*')
         .eq('published', true)
+        .order('order_index', { ascending: true })
         .order('created_at', { ascending: false })
         .limit(3);
 
       if (error) throw error;
-      setPosts(data || []);
+      setProjects(data || []);
     } catch (error: any) {
       setError(error.message);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const fetchCategories = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('order_index', { ascending: true });
-
-      if (error) throw error;
-      setCategories(data || []);
-    } catch (error: any) {
-      console.error('Error fetching categories:', error);
     }
   };
 
@@ -81,13 +62,17 @@ export default function Blog() {
     return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${path}`;
   };
 
-  const filteredPosts = activeCategory === 'all' 
-    ? posts 
-    : posts.filter(post => 
-        post.tags.some(tag => 
-          tag.toLowerCase().includes(activeCategory.toLowerCase())
-        )
-      );
+  const filteredProjects = activeCategory === 'all' 
+    ? projects 
+    : projects.filter(project => {
+        const relatedTags = categoryTagMap[activeCategory] || [];
+        
+        return project.technologies.some(tech => 
+          relatedTags.some(relatedTag => 
+            tech.toLowerCase().includes(relatedTag.toLowerCase())
+          )
+        );
+      });
 
   if (isLoading) {
     return (
@@ -109,30 +94,20 @@ export default function Blog() {
     <section className="py-16 bg-[#f5f3f0]">
       <div className="max-w-6xl mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4">Latest Blog Posts</h2>
+          <h2 className="text-4xl font-bold mb-4">Featured Projects</h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Insights and tutorials on game development and technical art
+            A showcase of my latest work in game development and technical art
           </p>
         </div>
 
         {/* Category Filters */}
         <div className="flex flex-wrap justify-center gap-4 mb-12">
-          <button
-            onClick={() => setActiveCategory('all')}
-            className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-              activeCategory === 'all'
-                ? 'bg-black text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            All
-          </button>
-          {filteredPosts.length > 0 && categories.map((category) => (
+          {categories.map((category) => (
             <button
               key={category.id}
-              onClick={() => setActiveCategory(category.slug)}
+              onClick={() => setActiveCategory(category.id)}
               className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                activeCategory === category.slug
+                activeCategory === category.id
                   ? 'bg-black text-white'
                   : 'bg-white text-gray-600 hover:bg-gray-100'
               }`}
@@ -142,13 +117,13 @@ export default function Blog() {
           ))}
         </div>
 
-        {/* Blog Posts Grid */}
+        {/* Projects Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           <AnimatePresence>
-            {filteredPosts.length > 0 ? (
-              filteredPosts.map(post => (
+            {filteredProjects.length > 0 ? (
+              filteredProjects.map(project => (
                 <motion.div
-                  key={post.id}
+                  key={project.id}
                   layout
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -157,35 +132,30 @@ export default function Blog() {
                   className="group relative bg-[#f5f3f0]/95 backdrop-blur-sm rounded-xl overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300"
                 >
                   <div className="relative h-64 overflow-hidden">
-                    {post.image_url && (
+                    {project.image_url && (
                       <Image
-                        src={getImageUrl(post.image_url)}
-                        alt={post.title}
+                        src={getImageUrl(project.image_url)}
+                        alt={project.title}
                         fill
                         className="object-cover transition-transform duration-500 group-hover:scale-110"
                       />
                     )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   </div>
                   <div className="p-6">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm text-gray-500">
-                        {new Date(post.created_at).toLocaleDateString()}
-                      </span>
-                      <span className="text-sm text-gray-500">{post.read_time} min read</span>
-                    </div>
                     <h3 className="text-2xl font-bold mb-3 text-gray-900 group-hover:text-primary transition-colors duration-300">
-                      {post.title}
+                      {project.title}
                     </h3>
                     <p className="text-gray-700 mb-4 leading-relaxed">
-                      {post.excerpt}
+                      {project.description}
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {post.tags.map(tag => (
+                      {project.technologies.map(tech => (
                         <span
-                          key={tag}
+                          key={tech}
                           className="px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full border border-primary/20 hover:bg-primary/20 transition-colors duration-300"
                         >
-                          {tag}
+                          {tech}
                         </span>
                       ))}
                     </div>
@@ -201,29 +171,14 @@ export default function Blog() {
         </div>
 
         {/* View All Button */}
-        {filteredPosts.length > 0 && (
-          <div className="text-center">
-            <a
-              href="/blog"
-              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
-            >
-              View All Posts
-              <svg
-                className="w-5 h-5 ml-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 8l4 4m0 0l-4 4m4-4H3"
-                />
-              </svg>
-            </a>
-          </div>
-        )}
+        <div className="text-center">
+          <a
+            href="/portfolio"
+            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
+          >
+            View All Projects
+          </a>
+        </div>
       </div>
     </section>
   );
