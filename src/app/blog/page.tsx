@@ -14,6 +14,16 @@ export default function BlogPage() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
 
+  const getImageUrl = (path: string) => {
+    if (!path) return '';
+    // If the path is already an absolute URL, return it as is
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return path;
+    }
+    // Otherwise, construct the absolute URL
+    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${path}`;
+  };
+
   const filteredPosts = activeCategory === 'all' 
     ? blogPosts 
     : blogPosts.filter(post => {
@@ -88,7 +98,7 @@ export default function BlogPage() {
                 >
                   <div className="relative h-64 overflow-hidden">
                     <Image
-                      src={post.image}
+                      src={getImageUrl(post.image)}
                       alt={post.title}
                       fill
                       className="object-cover transition-transform duration-300 group-hover:scale-110"

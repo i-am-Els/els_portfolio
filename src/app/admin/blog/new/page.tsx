@@ -243,10 +243,15 @@ export default function NewBlogPostPage() {
           .from('blog-images')
           .remove([oldPath]);
         
-        // Update the image URL in the database
+        // Get the new absolute URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('blog-images')
+          .getPublicUrl(newPath);
+        
+        // Update the image URL in the database with the new absolute URL
         const { error: updateError } = await supabase
           .from('blog_posts')
-          .update({ image_url: newPath })
+          .update({ image_url: publicUrl })
           .eq('id', data.id);
         
         if (updateError) throw updateError;

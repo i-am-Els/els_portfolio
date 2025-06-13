@@ -27,6 +27,16 @@ export default function BlogPostsPage() {
   const router = useRouter();
   const supabase = createClientComponentClient();
 
+  const getImageUrl = (path: string) => {
+    if (!path) return '';
+    // If the path is already an absolute URL, return it as is
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return path;
+    }
+    // Otherwise, construct the absolute URL
+    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${path}`;
+  };
+
   useEffect(() => {
     fetchPosts();
   }, []);
@@ -77,11 +87,6 @@ export default function BlogPostsPage() {
     }
   };
 
-  const getImageUrl = (path: string) => {
-    if (!path) return '';
-    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/blog-images/${path}`;
-  };
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -100,29 +105,29 @@ export default function BlogPostsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Blog Posts</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Blog Posts</h1>
         <Link
           href="/admin/blog/new"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
         >
+          <PlusIcon className="h-5 w-5 mr-2" />
           New Post
         </Link>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
           {error}
         </div>
       )}
 
-      <div className="grid gap-6">
-        {posts.map((post) => {
-          console.log('Post image_url:', post.image_url);
-          return (
+      <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+        <div className="grid gap-6 p-6">
+          {posts.map((post) => (
             <div
               key={post.id}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+              className="group relative bg-[#f5f3f0]/95 backdrop-blur-sm rounded-xl overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300"
             >
               <div className="p-6">
                 <div className="flex items-start justify-between">
@@ -157,21 +162,23 @@ export default function BlogPostsPage() {
                 <div className="mt-4 flex justify-end gap-2">
                   <Link
                     href={`/admin/blog/${post.id}/edit`}
-                    className="text-blue-600 hover:text-blue-800"
+                    className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
                   >
+                    <PencilIcon className="h-4 w-4 mr-1" />
                     Edit
                   </Link>
                   <button
                     onClick={() => handleDelete(post.id)}
-                    className="text-red-600 hover:text-red-800"
+                    className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                   >
+                    <TrashIcon className="h-4 w-4 mr-1" />
                     Delete
                   </button>
                 </div>
               </div>
             </div>
-          );
-        })}
+          ))}
+        </div>
       </div>
     </div>
   );
