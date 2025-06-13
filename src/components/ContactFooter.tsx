@@ -1,10 +1,48 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import Image from 'next/image';
-import Link from 'next/link';
 
 export default function ContactFooter() {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    message: '',
+  });
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatus('loading');
+    setErrorMessage('');
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send message');
+      }
+
+      setStatus('success');
+      setFormData({ name: '', email: '', message: '' });
+    } catch (error) {
+      setStatus('error');
+      setErrorMessage('Failed to send message. Please try again.');
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
   return (
     <footer className="bg-[#121212] text-white py-8">
       <div className="max-w-6xl mx-auto px-4">
@@ -16,7 +54,7 @@ export default function ContactFooter() {
             transition={{ duration: 0.5 }}
           >
             <h3 className="text-xl font-semibold mb-4">Get in Touch</h3>
-            <form className="space-y-3">
+            <form onSubmit={handleSubmit} className="space-y-3">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium mb-1 text-gray-300">
                   Name
@@ -24,6 +62,10 @@ export default function ContactFooter() {
                 <input
                   type="text"
                   id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
                   className="w-full px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 focus:border-primary focus:outline-none text-white placeholder-gray-400 transition-colors"
                   placeholder="Your name"
                 />
@@ -35,6 +77,10 @@ export default function ContactFooter() {
                 <input
                   type="email"
                   id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
                   className="w-full px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 focus:border-primary focus:outline-none text-white placeholder-gray-400 transition-colors"
                   placeholder="Your email"
                 />
@@ -45,21 +91,35 @@ export default function ContactFooter() {
                 </label>
                 <textarea
                   id="message"
+                  name="message"
+                  value={formData.message}
+                  onChange={handleChange}
+                  required
                   rows={3}
                   className="w-full px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 focus:border-primary focus:outline-none text-white placeholder-gray-400 transition-colors resize-none"
                   placeholder="Your message"
                 ></textarea>
               </div>
-              <button
+              {status === 'error' && (
+                <div className="text-red-400 text-sm">{errorMessage}</div>
+              )}
+              {status === 'success' && (
+                <div className="text-green-400 text-sm">Message sent successfully!</div>
+              )}
+              <motion.button
                 type="submit"
-                className="w-full bg-primary/90 text-white py-2 px-4 rounded-lg 
+                disabled={status === 'loading'}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className={`w-full bg-primary/90 text-white py-2 px-4 rounded-lg 
                   hover:bg-primary hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/20 
                   active:scale-[0.98] active:bg-primary/80
                   transition-all duration-300 ease-in-out
-                  font-medium text-sm uppercase tracking-wider"
+                  font-medium text-sm uppercase tracking-wider
+                  ${status === 'loading' ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                Send Message
-              </button>
+                {status === 'loading' ? 'Sending...' : 'Send Message'}
+              </motion.button>
             </form>
           </motion.div>
 
