@@ -17,6 +17,13 @@ interface BlogPost {
   tags: string[];
   created_at: string;
   updated_at: string;
+  blog_post_categories?: {
+    category_id: string;
+    categories?: {
+      id: string;
+      slug: string;
+    };
+  }[];
 }
 
 interface Category {
@@ -43,15 +50,24 @@ export default function Blog() {
     try {
       const { data, error } = await supabase
         .from('blog_posts')
-        .select('*')
+        .select(`
+          *,
+          blog_post_categories (
+            category_id,
+            categories (
+              id,
+              slug
+            )
+          )
+        `)
         .eq('published', true)
         .order('created_at', { ascending: false })
         .limit(3);
 
       if (error) throw error;
       setPosts(data || []);
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
     } finally {
       setIsLoading(false);
     }
@@ -84,8 +100,8 @@ export default function Blog() {
   const filteredPosts = activeCategory === 'all' 
     ? posts 
     : posts.filter(post => 
-        post.tags.some(tag => 
-          tag.toLowerCase().includes(activeCategory.toLowerCase())
+        post.blog_post_categories?.some(bpc => 
+          bpc.categories?.slug === activeCategory
         )
       );
 
@@ -116,25 +132,25 @@ export default function Blog() {
         </div>
 
         {/* Category Filters */}
-        <div className="flex flex-wrap justify-center gap-4 mb-12">
+        <div className="flex flex-wrap gap-2 mb-8">
           <button
             onClick={() => setActiveCategory('all')}
-            className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
               activeCategory === 'all'
                 ? 'bg-black text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-100'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
             All
           </button>
-          {filteredPosts.length > 0 && categories.map((category) => (
+          {categories.map((category) => (
             <button
               key={category.id}
               onClick={() => setActiveCategory(category.slug)}
-              className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                 activeCategory === category.slug
                   ? 'bg-black text-white'
-                  : 'bg-white text-gray-600 hover:bg-gray-100'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               {category.name}

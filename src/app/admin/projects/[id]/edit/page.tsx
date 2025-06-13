@@ -203,6 +203,8 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
         project_url: project.project_url || null,
         github_url: project.github_url || null,
         technologies: project.technologies,
+        published: project.published,
+        featured: project.featured,
         order_index: project.order_index,
         updated_at: new Date().toISOString()
       };

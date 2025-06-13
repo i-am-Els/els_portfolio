@@ -353,23 +353,46 @@ export default function EditBlogPostPage({ params }: PageProps) {
           if (updateError) throw updateError;
         }
 
-        // Move content images from temp to actual post folder
+        // Move content images from temp to actual post folder and update content
         const { data: tempContentImages, error: tempContentError } = await supabase.storage
           .from('blog-images')
           .list('blog-images/temp/content');
 
         if (!tempContentError && tempContentImages) {
+          let updatedContent = post.content;
+          
           for (const image of tempContentImages) {
             const oldPath = `blog-images/temp/content/${image.name}`;
             const newPath = `blog-images/${data.id}/content/${image.name}`;
             
+            // Copy the file to the new location
             await supabase.storage
               .from('blog-images')
               .copy(oldPath, newPath);
             
+            // Delete the temp file
             await supabase.storage
               .from('blog-images')
               .remove([oldPath]);
+
+            // Get the new URL
+            const { data: { publicUrl } } = supabase.storage
+              .from('blog-images')
+              .getPublicUrl(newPath);
+
+            // Update the content to use the new URL
+            const oldUrl = `blog-images/temp/content/${image.name}`;
+            updatedContent = updatedContent.replace(new RegExp(oldUrl, 'g'), newPath);
+          }
+
+          // Update the post content with the new URLs
+          if (updatedContent !== post.content) {
+            const { error: contentUpdateError } = await supabase
+              .from('blog_posts')
+              .update({ content: updatedContent })
+              .eq('id', data.id);
+
+            if (contentUpdateError) throw contentUpdateError;
           }
         }
 

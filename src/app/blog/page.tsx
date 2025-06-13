@@ -21,6 +21,13 @@ interface BlogPost {
   tags: string[];
   created_at: string;
   updated_at: string;
+  blog_post_categories?: {
+    category_id: string;
+    categories?: {
+      id: string;
+      slug: string;
+    };
+  }[];
 }
 
 interface Category {
@@ -48,7 +55,16 @@ export default function BlogPage() {
     try {
       const { data, error } = await supabase
         .from('blog_posts')
-        .select('*')
+        .select(`
+          *,
+          blog_post_categories (
+            category_id,
+            categories (
+              id,
+              slug
+            )
+          )
+        `)
         .eq('published', true)
         .order('created_at', { ascending: false });
 
@@ -88,8 +104,8 @@ export default function BlogPage() {
   const filteredPosts = activeCategory === 'all' 
     ? posts 
     : posts.filter(post => 
-        post.tags.some(tag => 
-          tag.toLowerCase().includes(activeCategory.toLowerCase())
+        post.blog_post_categories?.some(bpc => 
+          bpc.categories?.slug === activeCategory
         )
       );
 
@@ -146,7 +162,7 @@ export default function BlogPage() {
             >
               All
             </button>
-            {filteredPosts.length > 0 && categories.map((category) => (
+            {categories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => handleCategoryChange(category.slug)}
@@ -164,8 +180,8 @@ export default function BlogPage() {
           {/* Blog Posts Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <AnimatePresence>
-              {paginatedPosts.length > 0 ? (
-                paginatedPosts.map(post => (
+              {filteredPosts.length > 0 ? (
+                filteredPosts.map(post => (
                   <motion.div
                     key={post.id}
                     layout

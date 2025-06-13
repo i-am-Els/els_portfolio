@@ -161,7 +161,7 @@ export default function PortfolioPage() {
             >
               All
             </button>
-            {filteredProjects.length > 0 && categories.map((category) => (
+            {categories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => handleCategoryChange(category.slug)}

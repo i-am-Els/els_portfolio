@@ -295,17 +295,40 @@ export default function NewBlogPostPage() {
         .list('blog-images/temp/content');
 
       if (!tempContentError && tempContentImages) {
+        let updatedContent = post.content;
+        
         for (const image of tempContentImages) {
           const oldPath = `blog-images/temp/content/${image.name}`;
           const newPath = `blog-images/${data.id}/content/${image.name}`;
           
+          // Copy the file to the new location
           await supabase.storage
             .from('blog-images')
             .copy(oldPath, newPath);
           
+          // Delete the temp file
           await supabase.storage
             .from('blog-images')
             .remove([oldPath]);
+
+          // Get the new URL
+          const { data: { publicUrl } } = supabase.storage
+            .from('blog-images')
+            .getPublicUrl(newPath);
+
+          // Update the content to use the new URL
+          const oldUrl = `blog-images/temp/content/${image.name}`;
+          updatedContent = updatedContent.replace(new RegExp(oldUrl, 'g'), newPath);
+        }
+
+        // Update the post content with the new URLs
+        if (updatedContent !== post.content) {
+          const { error: contentUpdateError } = await supabase
+            .from('blog_posts')
+            .update({ content: updatedContent })
+            .eq('id', data.id);
+
+          if (contentUpdateError) throw contentUpdateError;
         }
       }
 
