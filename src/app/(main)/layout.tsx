@@ -4,17 +4,51 @@ import Navigation from '@/components/Navigation';
 
 const inter = Inter({ subsets: ["latin"] });
 
+// Get the base URL based on environment
+const getBaseUrl = () => {
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  return 'http://localhost:3000';
+};
+
 export const metadata: Metadata = {
-  metadataBase: new URL('https://eniolaolawale.com'),
-  title: 'Eniola Olawale - Game Developer & Technical Artist',
-  description: 'Portfolio showcasing game development and technical art projects by Eniola Olawale',
-  keywords: ['game development', 'technical art', 'unreal engine', 'unity', '3D modeling', 'shaders', 'portfolio'],
+  metadataBase: new URL(getBaseUrl()),
+  title: {
+    default: 'Eniola Olawale - Game Developer & Technical Artist',
+    template: '%s | Eniola Olawale'
+  },
+  description: 'Portfolio showcasing game development and technical art projects by Eniola Olawale. Specializing in Unreal Engine, Unity, 3D modeling, and shader development.',
+  keywords: [
+    'game development',
+    'technical art',
+    'unreal engine',
+    'unity',
+    '3D modeling',
+    'shaders',
+    'portfolio',
+    'game artist',
+    'technical artist',
+    'game design',
+    'visual effects',
+    'VFX',
+    'game programming'
+  ],
   authors: [{ name: 'Eniola Olawale' }],
   creator: 'Eniola Olawale',
+  publisher: 'Eniola Olawale',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   openGraph: {
     title: 'Eniola Olawale - Game Developer & Technical Artist',
-    description: 'Portfolio showcasing game development and technical art projects by Eniola Olawale',
-    url: 'https://eniolaolawale.com',
+    description: 'Portfolio showcasing game development and technical art projects by Eniola Olawale. Specializing in Unreal Engine, Unity, 3D modeling, and shader development.',
+    url: getBaseUrl(),
     siteName: 'Eniola Olawale Portfolio',
     images: [
       {
@@ -30,16 +64,16 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Eniola Olawale - Game Developer & Technical Artist',
-    description: 'Portfolio showcasing game development and technical art projects by Eniola Olawale',
+    description: 'Portfolio showcasing game development and technical art projects by Eniola Olawale. Specializing in Unreal Engine, Unity, 3D modeling, and shader development.',
     creator: '@eniolaolawale',
     images: ['/og-image.jpg'],
   },
   robots: {
-    index: true,
-    follow: true,
+    index: process.env.NODE_ENV === 'production',
+    follow: process.env.NODE_ENV === 'production',
     googleBot: {
-      index: true,
-      follow: true,
+      index: process.env.NODE_ENV === 'production',
+      follow: process.env.NODE_ENV === 'production',
       'max-video-preview': -1,
       'max-image-preview': 'large',
       'max-snippet': -1,
@@ -50,6 +84,10 @@ export const metadata: Metadata = {
     yandex: 'your-yandex-verification',
     yahoo: 'your-yahoo-verification',
   },
+  alternates: {
+    canonical: getBaseUrl(),
+  },
+  category: 'technology',
 };
 
 export default function MainLayout({
