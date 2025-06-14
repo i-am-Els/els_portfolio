@@ -22,6 +22,22 @@ export const metadata: Metadata = {
     template: '%s | Eniola Olawale'
   },
   description: 'Portfolio showcasing game development and technical art projects by Eniola Olawale. Specializing in Unreal Engine, Unity, 3D modeling, and shader development.',
+  icons: {
+    icon: [
+      { url: '/logo.png', sizes: '32x32', type: 'image/png' },
+      { url: '/logo.png', sizes: '16x16', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/logo.png', sizes: '180x180', type: 'image/png' },
+    ],
+    other: [
+      {
+        rel: 'mask-icon',
+        url: '/logo.png',
+      },
+    ],
+  },
+  manifest: '/manifest.json',
   keywords: [
     'game development',
     'technical art',

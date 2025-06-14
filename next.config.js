@@ -4,11 +4,23 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('https://', '') || '',
-        port: '',
+        hostname: '**.supabase.co',
         pathname: '/storage/v1/object/public/**',
       },
     ],
+  },
+  async headers() {
+    return [
+      {
+        source: '/favicon.ico',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=0, must-revalidate',
+          },
+        ],
+      },
+    ];
   },
 };
 
