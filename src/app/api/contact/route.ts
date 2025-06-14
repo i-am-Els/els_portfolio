@@ -1,12 +1,19 @@
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
+import type { Transporter } from 'nodemailer';
+
+interface ContactFormData {
+  name: string;
+  email: string;
+  message: string;
+}
 
 export async function POST(request: Request) {
   try {
-    const { name, email, message } = await request.json();
+    const { name, email, message }: ContactFormData = await request.json();
 
     // Create a transporter using Gmail
-    const transporter = nodemailer.createTransport({
+    const transporter: Transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: process.env.EMAIL_USER,
