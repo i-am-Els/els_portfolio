@@ -127,28 +127,21 @@ export default function AdminLayout({
                 >
                   Blog
                 </Link>
-                <Link
-                  href="/admin/profile"
-                  className={`flex items-center px-4 py-2 text-sm ${
-                    pathname.startsWith('/admin/profile')
-                      ? 'text-black font-semibold border-b-2 border-black'
-                      : 'text-gray-500 hover:text-gray-900 font-medium'
-                  }`}
-                >
-                  Profile
-                </Link>
               </div>
             </div>
             <div className="flex items-center space-x-4">
               <div className="flex items-center">
                 <Link
                   href="/admin/profile"
-                  className="flex items-center hover:opacity-80 transition-opacity"
+                  className="flex items-center hover:opacity-80 transition-opacity group relative"
                 >
-                  <UserCircleIcon className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-2" />
+                  <UserCircleIcon className="h-7 w-7 text-gray-500 dark:text-gray-400 mr-2" />
                   <span className="text-sm text-gray-700 dark:text-gray-300">
                     {userEmail}
                   </span>
+                  <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                    Profile Settings
+                  </div>
                 </Link>
               </div>
               <button

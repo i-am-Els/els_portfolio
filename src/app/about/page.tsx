@@ -11,13 +11,13 @@ interface Profile {
   id: string;
   bio: string;
   short_bio: string;
-  profile_image_url: string;
   email: string;
   phone: string;
   location: string;
   github_url: string;
   artstation_url: string;
   linkedin_url: string;
+  image_url?: string;
 }
 
 interface Experience {
@@ -37,10 +37,22 @@ interface Skill {
   order_index: number;
 }
 
+interface Education {
+  id: string;
+  institution: string;
+  degree: string;
+  field_of_study: string;
+  start_date: string;
+  end_date: string | null;
+  description: string | null;
+  order_index: number;
+}
+
 export default function AboutPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [skills, setSkills] = useState<Skill[]>([]);
+  const [education, setEducation] = useState<Education[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const supabase = createClientComponentClient();
@@ -49,6 +61,7 @@ export default function AboutPage() {
     fetchProfile();
     fetchExperiences();
     fetchSkills();
+    fetchEducation();
   }, []);
 
   const fetchProfile = async () => {
@@ -92,6 +105,20 @@ export default function AboutPage() {
       setError(error.message);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchEducation = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('education')
+        .select('*')
+        .order('order_index', { ascending: true });
+
+      if (error) throw error;
+      setEducation(data || []);
+    } catch (error: any) {
+      setError(error.message);
     }
   };
 
@@ -156,7 +183,7 @@ export default function AboutPage() {
                 className="relative h-[400px] rounded-xl overflow-hidden"
               >
                 <Image
-                  src={profile?.profile_image_url || '/profile.jpg'}
+                  src={profile?.image_url || '/profile.jpg'}
                   alt="Eniola Olawale"
                   fill
                   className="object-cover"
@@ -222,6 +249,34 @@ export default function AboutPage() {
                         {skill}
                       </span>
                     ))}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </section>
+
+          {/* Education Section */}
+          <section className="mb-20">
+            <h2 className="text-3xl font-bold mb-12 text-center">Education</h2>
+            <div className="space-y-8">
+              {education.map((edu) => (
+                <motion.div
+                  key={edu.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white rounded-xl p-6 shadow-lg"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="text-xl font-semibold mb-2">{edu.institution}</h3>
+                      <p className="text-gray-600 mb-2">{edu.degree} in {edu.field_of_study}</p>
+                      <p className="text-gray-500 text-sm mb-4">
+                        {new Date(edu.start_date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} - {edu.end_date ? new Date(edu.end_date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Present'}
+                      </p>
+                      {edu.description && (
+                        <p className="text-gray-600">{edu.description}</p>
+                      )}
+                    </div>
                   </div>
                 </motion.div>
               ))}

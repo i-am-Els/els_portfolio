@@ -62,42 +62,61 @@ create table if not exists project_categories (
   primary key (project_id, category_id)
 );
 
--- New profile-related tables
+-- Create profile table
 create table if not exists profile (
-  id uuid primary key default uuid_generate_v4(),
-  bio text,
-  short_bio text,
-  profile_image_url text,
-  email text,
-  phone text,
-  location text,
-  github_url text,
-  artstation_url text,
-  linkedin_url text,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+    id uuid primary key default uuid_generate_v4(),
+    full_name text,
+    bio text,
+    short_bio text,
+    email text,
+    phone text,
+    location text,
+    github_url text,
+    artstation_url text,
+    linkedin_url text,
+    created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+    updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
-create table if not exists experiences (
-  id uuid primary key default uuid_generate_v4(),
-  title text not null,
-  company text not null,
-  period text not null,
-  description text not null,
-  skills text[] not null,
-  order_index integer not null,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
+-- Add user_id column if it doesn't exist
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM information_schema.columns 
+        WHERE table_name = 'profile' 
+        AND column_name = 'user_id'
+    ) THEN
+        ALTER TABLE profile ADD COLUMN user_id uuid;
+        ALTER TABLE profile ADD CONSTRAINT profile_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+    END IF;
+END $$;
 
-create table if not exists skills (
-  id uuid primary key default uuid_generate_v4(),
-  category text not null,
-  items text[] not null,
-  order_index integer not null,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
+-- Add image_url column if it doesn't exist
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM information_schema.columns 
+        WHERE table_name = 'profile' 
+        AND column_name = 'image_url'
+    ) THEN
+        ALTER TABLE profile ADD COLUMN image_url text;
+    END IF;
+END $$;
+
+-- Remove profile_image_url column if it exists
+DO $$ 
+BEGIN
+    IF EXISTS (
+        SELECT 1 
+        FROM information_schema.columns 
+        WHERE table_name = 'profile' 
+        AND column_name = 'profile_image_url'
+    ) THEN
+        ALTER TABLE profile DROP COLUMN profile_image_url;
+    END IF;
+END $$;
 
 -- Enable RLS
 alter table if exists categories enable row level security;
@@ -308,26 +327,251 @@ begin
   if not exists (select 1 from storage.buckets where id = 'blog-images') then
     insert into storage.buckets (id, name, public) values ('blog-images', 'blog-images', true);
   end if;
+
+  if not exists (select 1 from storage.buckets where id = 'images') then
+    insert into storage.buckets (id, name, public) values ('images', 'images', true);
+  end if;
 end $$;
 
 -- Storage Policies
-drop policy if exists "Allow public read access on project-images" on storage.objects;
-drop policy if exists "Allow authenticated users to upload project-images" on storage.objects;
-drop policy if exists "Allow public read access on blog-images" on storage.objects;
-drop policy if exists "Allow authenticated users to upload blog-images" on storage.objects;
+DO $$ 
+BEGIN
+    -- Project Images policies
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'objects' 
+        AND policyname = 'Allow public read access on project-images'
+    ) THEN
+        create policy "Allow public read access on project-images"
+        on storage.objects for select
+        using (bucket_id = 'project-images');
+    END IF;
 
-create policy "Allow public read access on project-images"
-  on storage.objects for select
-  using (bucket_id = 'project-images');
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'objects' 
+        AND policyname = 'Allow authenticated users to upload project-images'
+    ) THEN
+        create policy "Allow authenticated users to upload project-images"
+        on storage.objects for insert
+        with check (bucket_id = 'project-images' and auth.role() = 'authenticated');
+    END IF;
 
-create policy "Allow authenticated users to upload project-images"
-  on storage.objects for insert
-  with check (bucket_id = 'project-images' and auth.role() = 'authenticated');
+    -- Blog Images policies
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'objects' 
+        AND policyname = 'Allow public read access on blog-images'
+    ) THEN
+        create policy "Allow public read access on blog-images"
+        on storage.objects for select
+        using (bucket_id = 'blog-images');
+    END IF;
 
-create policy "Allow public read access on blog-images"
-  on storage.objects for select
-  using (bucket_id = 'blog-images');
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'objects' 
+        AND policyname = 'Allow authenticated users to upload blog-images'
+    ) THEN
+        create policy "Allow authenticated users to upload blog-images"
+        on storage.objects for insert
+        with check (bucket_id = 'blog-images' and auth.role() = 'authenticated');
+    END IF;
 
-create policy "Allow authenticated users to upload blog-images"
-  on storage.objects for insert
-  with check (bucket_id = 'blog-images' and auth.role() = 'authenticated');
+    -- Profile Images policies
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'objects' 
+        AND policyname = 'Allow public read access on images'
+    ) THEN
+        create policy "Allow public read access on images"
+        on storage.objects for select
+        using (bucket_id = 'images');
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'objects' 
+        AND policyname = 'Allow authenticated users to upload images'
+    ) THEN
+        create policy "Allow authenticated users to upload images"
+        on storage.objects for insert
+        with check (bucket_id = 'images' and auth.role() = 'authenticated');
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'objects' 
+        AND policyname = 'Allow authenticated users to update images'
+    ) THEN
+        create policy "Allow authenticated users to update images"
+        on storage.objects for update
+        using (bucket_id = 'images' and auth.role() = 'authenticated');
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'objects' 
+        AND policyname = 'Allow authenticated users to delete images'
+    ) THEN
+        create policy "Allow authenticated users to delete images"
+        on storage.objects for delete
+        using (bucket_id = 'images' and auth.role() = 'authenticated');
+    END IF;
+END $$;
+
+-- Enable RLS
+alter table profile enable row level security;
+
+-- Create policies if they don't exist
+DO $$ 
+BEGIN
+    -- Profile policies
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'profile' 
+        AND policyname = 'Public profiles are viewable by everyone'
+    ) THEN
+        create policy "Public profiles are viewable by everyone"
+        on profile for select
+        to public
+        using (true);
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'profile' 
+        AND policyname = 'Users can insert their own profile'
+    ) THEN
+        create policy "Users can insert their own profile"
+        on profile for insert
+        to authenticated
+        with check (auth.uid() = user_id);
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'profile' 
+        AND policyname = 'Users can update their own profile'
+    ) THEN
+        create policy "Users can update their own profile"
+        on profile for update
+        to authenticated
+        using (auth.uid() = user_id);
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'profile' 
+        AND policyname = 'Users can delete their own profile'
+    ) THEN
+        create policy "Users can delete their own profile"
+        on profile for delete
+        to authenticated
+        using (auth.uid() = user_id);
+    END IF;
+
+    -- Experiences policies
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'experiences' 
+        AND policyname = 'Public read access on experiences'
+    ) THEN
+        create policy "Public read access on experiences"
+        on experiences for select
+        to public
+        using (true);
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'experiences' 
+        AND policyname = 'Authenticated users can manage experiences'
+    ) THEN
+        create policy "Authenticated users can manage experiences"
+        on experiences for all
+        to authenticated
+        using (true);
+    END IF;
+
+    -- Skills policies
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'skills' 
+        AND policyname = 'Public read access on skills'
+    ) THEN
+        create policy "Public read access on skills"
+        on skills for select
+        to public
+        using (true);
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'skills' 
+        AND policyname = 'Authenticated users can manage skills'
+    ) THEN
+        create policy "Authenticated users can manage skills"
+        on skills for all
+        to authenticated
+        using (true);
+    END IF;
+END $$;
+
+-- Create function to handle updated_at
+create or replace function handle_updated_at()
+returns trigger as $$
+begin
+    NEW.updated_at = TIMEZONE('utc'::text, NOW());
+    RETURN NEW;
+end;
+$$ language plpgsql;
+
+-- Create trigger for updated_at if it doesn't exist
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM pg_trigger 
+        WHERE tgname = 'set_updated_at' 
+        AND tgrelid = 'profile'::regclass
+    ) THEN
+        create trigger set_updated_at
+            before update on profile
+            for each row
+            execute function handle_updated_at();
+    END IF;
+END $$;
+
+-- Education table
+CREATE TABLE IF NOT EXISTS education (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    institution VARCHAR(255) NOT NULL,
+    degree VARCHAR(255) NOT NULL,
+    field_of_study VARCHAR(255) NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE,
+    description TEXT,
+    order_index INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Add RLS policies for education table
+ALTER TABLE education ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow public read access on education"
+ON education FOR SELECT
+USING (true);
+
+CREATE POLICY "Allow authenticated users to insert education"
+ON education FOR INSERT
+WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Allow authenticated users to update education"
+ON education FOR UPDATE
+USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Allow authenticated users to delete education"
+ON education FOR DELETE
+USING (auth.role() = 'authenticated');

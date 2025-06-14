@@ -28,51 +28,31 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        console.log('Fetching dashboard stats...');
-        
         // Fetch total counts
         const { count: projectsCount, error: projectsError } = await supabase
           .from('projects')
           .select('*', { count: 'exact', head: true });
-        
-        console.log('Projects count:', projectsCount, 'Error:', projectsError);
 
         const { count: blogCount, error: blogError } = await supabase
           .from('blog_posts')
           .select('*', { count: 'exact', head: true });
-        
-        console.log('Blog count:', blogCount, 'Error:', blogError);
 
         const { count: categoriesCount, error: categoriesError } = await supabase
           .from('categories')
           .select('*', { count: 'exact', head: true });
-        
-        console.log('Categories count:', categoriesCount, 'Error:', categoriesError);
 
-        // Fetch recent items with more detailed logging
+        // Fetch recent items
         const { data: recentProjects, error: recentProjectsError } = await supabase
           .from('projects')
           .select('*')
           .order('created_at', { ascending: false })
           .limit(5);
-        
-        console.log('Recent projects query result:', {
-          data: recentProjects,
-          error: recentProjectsError,
-          query: 'SELECT * FROM projects ORDER BY created_at DESC LIMIT 5'
-        });
 
         const { data: recentBlogPosts, error: recentBlogPostsError } = await supabase
           .from('blog_posts')
           .select('*')
           .order('created_at', { ascending: false })
           .limit(5);
-        
-        console.log('Recent blog posts query result:', {
-          data: recentBlogPosts,
-          error: recentBlogPostsError,
-          query: 'SELECT * FROM blog_posts ORDER BY created_at DESC LIMIT 5'
-        });
 
         setStats({
           totalProjects: projectsCount || 0,
