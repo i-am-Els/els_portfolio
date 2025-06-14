@@ -36,13 +36,13 @@ export default function Navigation() {
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
+          <Link href="/" className="flex items-center">
             <Image
               src="/logo.png"
               alt="Logo"
-              width={40}
-              height={40}
-              className="w-10 h-10"
+              width={48}
+              height={48}
+              className="w-12 h-12"
             />
             <span className="text-xl font-bold text-gray-900">
               Eniola Olawale
