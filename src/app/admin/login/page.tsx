@@ -30,7 +30,7 @@ export default function LoginPage() {
         // Wait for the session to be set
         await supabase.auth.getSession();
         // Use router.push for client-side navigation
-        router.push('/admin/projects');
+        router.push('/admin');
         router.refresh();
       }
     } catch (error: any) {
