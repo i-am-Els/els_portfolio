@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { motion } from 'framer-motion';
 import { UserCircleIcon } from '@heroicons/react/24/outline';
+import type { Database } from '@/types/supabase';
+import { Session } from '@supabase/supabase-js';
 
 export default function AdminLayout({
   children,

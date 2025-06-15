@@ -18,8 +18,10 @@ export default function AdminRootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <AdminLayout>{children}</AdminLayout>
+        <div id="admin-root">
+          <AdminLayout>{children}</AdminLayout>
+        </div>
       </body>
     </html>
   );
-} 
+}
