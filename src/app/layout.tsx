@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     template: '%s | Eniola Olawale',
     default: 'Eniola Olawale - Game Developer & Artist',
   },
-  description: 'Portfolio website of Eniola Olawale, showcasing game development and art projects.',
+  description: 'Portfolio website of Eniola Olawale, showcasing game development and technical art projects.',
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   icons: {
     icon: [
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     siteName: 'Eniola Olawale',
     images: [
       {
-        url: '/og-image.jpg',
+        url: '/seo-image.png',
         width: 1200,
         height: 630,
         alt: 'Eniola Olawale Portfolio',
@@ -51,8 +51,8 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Eniola Olawale - Game Developer & Artist',
-    description: 'Portfolio website of Eniola Olawale, showcasing game development and art projects.',
-    images: ['/og-image.jpg'],
+    description: 'Portfolio website of Eniola Olawale, showcasing game development and technical art projects.',
+    images: ['/seo-image.png'],
   },
   robots: {
     index: true,
