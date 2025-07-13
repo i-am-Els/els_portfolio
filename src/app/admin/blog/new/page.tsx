@@ -3,16 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import TiptapImage from '@tiptap/extension-image';
-import TiptapLink from '@tiptap/extension-link';
-import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
-import { common, createLowlight } from 'lowlight';
-import { Image as ImageIcon, Link as LinkIcon, Code, Table, Quote, List, ListOrdered, Heading1, Heading2, Heading3, Bold, Italic, Strikethrough } from 'lucide-react';
+import { RichTextEditor, RichTextEditorHandle } from '@/components/editor/RichTextEditor';
 import NextLink from 'next/link';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
+import { useFlashMessage } from '@/components/FlashMessage';
+import { uploadBlogImageToSupabase } from '@/utils/supabaseUpload';
+import React, { useRef } from 'react';
 
 interface Category {
   id: string;
@@ -46,11 +42,11 @@ export default function NewBlogPostPage() {
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { showMessage } = useFlashMessage();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [usedImages, setUsedImages] = useState<Set<string>>(new Set());
-  const [tempUploadedImages, setTempUploadedImages] = useState<Set<string>>(new Set());
+  const editorRef = useRef<RichTextEditorHandle>(null);
   const router = useRouter();
   const supabase = createClientComponentClient();
 
@@ -76,7 +72,7 @@ export default function NewBlogPostPage() {
     if (e.key === 'Enter' && tagInput.trim()) {
       e.preventDefault();
       if (!post.tags.includes(tagInput.trim())) {
-        setPost(prev => ({
+        setPost((prev: BlogPost) => ({
           ...prev,
           tags: [...prev.tags, tagInput.trim()]
         }));
@@ -86,42 +82,19 @@ export default function NewBlogPostPage() {
   };
 
   const removeTag = (tagToRemove: string) => {
-    setPost(prev => ({
+    setPost((prev: BlogPost) => ({
       ...prev,
       tags: prev.tags.filter(tag => tag !== tagToRemove)
     }));
   };
 
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        heading: {
-          levels: [1, 2, 3],
-        },
-      }),
-      TiptapImage.configure({
-        HTMLAttributes: {
-          class: 'max-w-full rounded-lg',
-        },
-      }),
-      TiptapLink.configure({
-        openOnClick: false,
-        HTMLAttributes: {
-          class: 'text-blue-600 hover:text-blue-800 underline',
-        },
-      }),
-      CodeBlockLowlight.configure({
-        lowlight: createLowlight(common),
-        HTMLAttributes: {
-          class: 'rounded-md bg-gray-800 p-5 font-mono text-sm text-gray-100',
-        },
-      }),
-    ],
-    content: post.content,
-    onUpdate: ({ editor }) => {
-      setPost(prev => ({ ...prev, content: editor.getHTML() }));
-    },
-  });
+  // Update editor content when post data is loaded
+  useEffect(() => {
+    if (post.content) {
+      const urls = extractImageUrls(post.content);
+      setUsedImages(urls);
+    }
+  }, [post.content]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -151,245 +124,66 @@ export default function NewBlogPostPage() {
     }
   }, [post.content]);
 
-  const uploadImage = async (file: File, isContentImage: boolean = false): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-    
-    // For new posts, use a temp folder
-    const folder = isContentImage ? 'content' : 'thumbnail';
-    const filePath = `blog-images/temp/${folder}/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('blog-images')
-      .upload(filePath, file);
-
-    if (uploadError) {
-      throw uploadError;
-    }
-
-    // Get the full public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('blog-images')
-      .getPublicUrl(filePath);
-
-    // Track the uploaded image
-    setTempUploadedImages(prev => new Set([...prev, publicUrl]));
-
-    return publicUrl;
-  };
-
-  const addImage = async () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (file) {
-        try {
-          const url = await uploadImage(file, true);
-          editor?.chain().focus().setImage({ src: url }).run();
-        } catch (error) {
-          console.error('Failed to upload image:', error);
-        }
-      }
-    };
-    
-    input.click();
-  };
-
-  // Function to clean up unused images
-  const cleanupUnusedImages = async () => {
-    // Get all images in the content folder
-    const { data: contentImages, error: contentError } = await supabase.storage
-      .from('blog-images')
-      .list('blog-images/temp/content');
-
-    if (contentError) {
-      console.error('Error listing content images:', contentError);
-      return;
-    }
-
-    // Delete images that are not in the usedImages set
-    for (const image of contentImages) {
-      const imagePath = `blog-images/temp/content/${image.name}`;
-      const { data: { publicUrl } } = supabase.storage
-        .from('blog-images')
-        .getPublicUrl(imagePath);
-
-      if (!usedImages.has(publicUrl)) {
-        await supabase.storage
-          .from('blog-images')
-          .remove([imagePath]);
-      }
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    setError(null);
 
     try {
-      // Validate required fields
-      if (!post.title || !post.slug || !post.excerpt || !post.content) {
+      if (!post.title || !post.slug || !post.content) {
         throw new Error('Please fill in all required fields');
-      }
-
-      let imageUrl = post.image_url;
-
-      // Upload new image if one was selected
-      if (imageFile) {
-        imageUrl = await uploadImage(imageFile);
       }
 
       const postData = {
         ...post,
-        image_url: imageUrl,
+        tags: post.tags,
+        published: post.published,
+        read_time: post.read_time,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
-
-      const { data, error } = await supabase
+      const { data: created, error: createError } = await supabase
         .from('blog_posts')
         .insert([postData])
         .select()
         .single();
+      if (createError || !created) throw createError || new Error('Blog not created');
+      const blogId = created.id?.toString() || created.slug;
 
-      if (error) throw error;
-
-      // If we uploaded an image to temp folder, move it to the actual post folder
-      if (imageFile && imageUrl) {
-        const oldPath = `blog-images/temp/thumbnail/${imageUrl.split('/').pop()}`;
-        const newPath = `blog-images/${data.id}/thumbnail/${imageUrl.split('/').pop()}`;
-        
-        // Copy the file to the new location
-        const { error: copyError } = await supabase.storage
-          .from('blog-images')
-          .copy(oldPath, newPath);
-        
-        if (copyError) throw copyError;
-        
-        // Delete the temp file
-        await supabase.storage
-          .from('blog-images')
-          .remove([oldPath]);
-        
-        // Get the new absolute URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('blog-images')
-          .getPublicUrl(newPath);
-        
-        // Update the image URL in the database with the new absolute URL
-        const { error: updateError } = await supabase
-          .from('blog_posts')
-          .update({ image_url: publicUrl })
-          .eq('id', data.id);
-        
-        if (updateError) throw updateError;
+      const pendingImages = editorRef.current?.getPendingImages() || {};
+      const replaceMap: { [localUrl: string]: string } = {};
+      for (const [localUrl, file] of Object.entries(pendingImages)) {
+        const supaUrl = await uploadBlogImageToSupabase(file, blogId);
+        replaceMap[localUrl] = supaUrl;
       }
-
-      // Move content images from temp to actual post folder
-      const { data: tempContentImages, error: tempContentError } = await supabase.storage
-        .from('blog-images')
-        .list('blog-images/temp/content');
-
-      if (!tempContentError && tempContentImages) {
-        let updatedContent = post.content;
-        
-        for (const image of tempContentImages) {
-          const oldPath = `blog-images/temp/content/${image.name}`;
-          const newPath = `blog-images/${data.id}/content/${image.name}`;
-          
-          // Copy the file to the new location
-          await supabase.storage
-            .from('blog-images')
-            .copy(oldPath, newPath);
-          
-          // Delete the temp file
-          await supabase.storage
-            .from('blog-images')
-            .remove([oldPath]);
-
-          // Get the new URL
-          const { data: { publicUrl } } = supabase.storage
-            .from('blog-images')
-            .getPublicUrl(newPath);
-
-          // Update the content to use the new URL
-          const oldUrl = `blog-images/temp/content/${image.name}`;
-          updatedContent = updatedContent.replace(new RegExp(oldUrl, 'g'), newPath);
-        }
-
-        // Update the post content with the new URLs
-        if (updatedContent !== post.content) {
-          const { error: contentUpdateError } = await supabase
-            .from('blog_posts')
-            .update({ content: updatedContent })
-            .eq('id', data.id);
-
-          if (contentUpdateError) throw contentUpdateError;
-        }
+      if (Object.keys(replaceMap).length > 0) {
+        editorRef.current?.replaceImageSrcs(replaceMap);
       }
+      const updatedContent = editorRef.current?.editor?.getHTML() || post.content;
 
-      // Clean up any unused images
-      await cleanupUnusedImages();
-
-      // Insert selected categories
-      if (selectedCategoryIds.length > 0) {
-        const { error: categoryError } = await supabase
-          .from('blog_post_categories')
-          .insert(selectedCategoryIds.map(categoryId => ({
-            blog_post_id: data.id,
-            category_id: categoryId
-          })));
-
-        if (categoryError) throw categoryError;
-      }
+      const { error: updateError } = await supabase
+        .from('blog_posts')
+        .update({ content: updatedContent })
+        .eq('id', blogId);
+      if (updateError) throw updateError;
 
       router.push('/admin/blog');
     } catch (error: any) {
-      setError(error.message);
+      showMessage(error.message || 'An error occurred', 'error');
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Clean up temp images when component unmounts
-  useEffect(() => {
-    return () => {
-      // Clean up temp folder
-      const cleanup = async () => {
-        const { data: tempImages } = await supabase.storage
-          .from('blog-images')
-          .list('blog-images/temp');
-
-        if (tempImages) {
-          for (const image of tempImages) {
-            await supabase.storage
-              .from('blog-images')
-              .remove([`blog-images/temp/${image.name}`]);
-          }
-        }
-      };
-      cleanup();
-    };
-  }, []);
-
-  const getImageUrl = (path: string) => {
-    if (!path) return '';
-    if (path.startsWith('http')) return path;
-    const { data: { publicUrl } } = supabase.storage
-      .from('blog-images')
-      .getPublicUrl(path);
-    return publicUrl;
-  };
-
-  const addLink = () => {
-    const url = window.prompt('Enter the URL');
-    if (url) {
-      editor?.chain().focus().setLink({ href: url }).run();
-    }
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const title = e.target.value;
+    setPost((prev: BlogPost) => ({
+      ...prev,
+      title,
+      slug: title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+    }));
   };
 
   const generateSlug = (title: string) => {
@@ -397,15 +191,6 @@ export default function NewBlogPostPage() {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
-  };
-
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const title = e.target.value;
-    setPost(prev => ({
-      ...prev,
-      title,
-      slug: generateSlug(title)
-    }));
   };
 
   return (
@@ -420,26 +205,23 @@ export default function NewBlogPostPage() {
         </NextLink>
       </div>
 
-      <form onSubmit={async (e) => {
-        e.preventDefault();
-        await handleSubmit(e);
-      }} className="space-y-6">
-        {/* Title */}
-        <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-            Title
-          </label>
-          <input
-            type="text"
-            id="title"
-            value={post.title}
-            onChange={handleTitleChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm"
-            required
-          />
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+              Title <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="title"
+              value={post.title}
+              onChange={handleTitleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              required
+            />
+          </div>
         </div>
 
-        {/* Slug */}
         <div>
           <label htmlFor="slug" className="block text-sm font-medium text-gray-700">
             Slug
@@ -448,27 +230,20 @@ export default function NewBlogPostPage() {
             type="text"
             id="slug"
             value={post.slug}
-            onChange={(e) => setPost(prev => ({ ...prev, slug: e.target.value }))}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm"
-            required
+            onChange={(e) => setPost((prev: BlogPost) => ({ ...prev, slug: e.target.value }))}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />
-          <p className="mt-1 text-sm text-gray-500">
-            The slug is automatically generated from the title, but you can edit it if needed.
-          </p>
         </div>
 
-        {/* Excerpt */}
         <div>
-          <label htmlFor="excerpt" className="block text-sm font-medium text-gray-700">
-            Excerpt
+          <label htmlFor="excerpt" className="block text-sm font-medium">
+            Excerpt <span className="text-red-500">*</span>
           </label>
           <textarea
             id="excerpt"
             value={post.excerpt}
-            onChange={(e) => setPost(prev => ({ ...prev, excerpt: e.target.value }))}
-            rows={3}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm"
-            required
+            onChange={(e) => setPost((prev: BlogPost) => ({ ...prev, excerpt: e.target.value }))}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black"
           />
         </div>
 
@@ -548,7 +323,8 @@ export default function NewBlogPostPage() {
                   <Image
                     src={imagePreview || post.image_url || ''}
                     alt="Post preview"
-                    fill
+                    width={128}
+                    height={128}
                     className="object-cover rounded-lg"
                   />
                 </div>
@@ -558,7 +334,7 @@ export default function NewBlogPostPage() {
               <input
                 type="file"
                 accept="image/*"
-                onChange={handleImageChange}
+                onChange={(e) => setImageFile(e.target.files && e.target.files[0] ? e.target.files[0] : null) }
                 className="block w-full text-sm text-gray-500
                   file:mr-4 file:py-2 file:px-4
                   file:rounded-lg file:border-0
@@ -573,134 +349,32 @@ export default function NewBlogPostPage() {
           </div>
         </div>
 
-        {/* Content Editor */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Content
-          </label>
-          <div className="mt-1 border border-gray-300 rounded-md shadow-sm">
-            <div className="border-b border-gray-300 p-2 bg-gray-50 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}
-                className={`p-2 rounded hover:bg-gray-200 ${editor?.isActive('heading', { level: 1 }) ? 'bg-gray-200' : ''}`}
-                title="Heading 1"
-              >
-                <Heading1 className="w-5 h-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
-                className={`p-2 rounded hover:bg-gray-200 ${editor?.isActive('heading', { level: 2 }) ? 'bg-gray-200' : ''}`}
-                title="Heading 2"
-              >
-                <Heading2 className="w-5 h-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}
-                className={`p-2 rounded hover:bg-gray-200 ${editor?.isActive('heading', { level: 3 }) ? 'bg-gray-200' : ''}`}
-                title="Heading 3"
-              >
-                <Heading3 className="w-5 h-5" />
-              </button>
-              <div className="w-px h-6 bg-gray-300 mx-1" />
-              <button
-                type="button"
-                onClick={() => editor?.chain().focus().toggleBold().run()}
-                className={`p-2 rounded hover:bg-gray-200 ${editor?.isActive('bold') ? 'bg-gray-200' : ''}`}
-                title="Bold"
-              >
-                <Bold className="w-5 h-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => editor?.chain().focus().toggleItalic().run()}
-                className={`p-2 rounded hover:bg-gray-200 ${editor?.isActive('italic') ? 'bg-gray-200' : ''}`}
-                title="Italic"
-              >
-                <Italic className="w-5 h-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => editor?.chain().focus().toggleStrike().run()}
-                className={`p-2 rounded hover:bg-gray-200 ${editor?.isActive('strike') ? 'bg-gray-200' : ''}`}
-                title="Strikethrough"
-              >
-                <Strikethrough className="w-5 h-5" />
-              </button>
-              <div className="w-px h-6 bg-gray-300 mx-1" />
-              <button
-                type="button"
-                onClick={() => editor?.chain().focus().toggleBulletList().run()}
-                className={`p-2 rounded hover:bg-gray-200 ${editor?.isActive('bulletList') ? 'bg-gray-200' : ''}`}
-                title="Bullet List"
-              >
-                <List className="w-5 h-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => editor?.chain().focus().toggleOrderedList().run()}
-                className={`p-2 rounded hover:bg-gray-200 ${editor?.isActive('orderedList') ? 'bg-gray-200' : ''}`}
-                title="Numbered List"
-              >
-                <ListOrdered className="w-5 h-5" />
-              </button>
-              <div className="w-px h-6 bg-gray-300 mx-1" />
-              <button
-                type="button"
-                onClick={() => editor?.chain().focus().toggleCodeBlock().run()}
-                className={`p-2 rounded hover:bg-gray-200 ${editor?.isActive('codeBlock') ? 'bg-gray-200' : ''}`}
-                title="Code Block"
-              >
-                <Code className="w-5 h-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => editor?.chain().focus().toggleBlockquote().run()}
-                className={`p-2 rounded hover:bg-gray-200 ${editor?.isActive('blockquote') ? 'bg-gray-200' : ''}`}
-                title="Blockquote"
-              >
-                <Quote className="w-5 h-5" />
-              </button>
-              <div className="w-px h-6 bg-gray-300 mx-1" />
-              <button
-                type="button"
-                onClick={addImage}
-                className="p-2 rounded hover:bg-gray-200"
-                title="Insert Image"
-              >
-                <ImageIcon className="w-5 h-5" />
-              </button>
-              <button
-                type="button"
-                onClick={addLink}
-                className={`p-2 rounded hover:bg-gray-200 ${editor?.isActive('link') ? 'bg-gray-200' : ''}`}
-                title="Insert Link"
-              >
-                <LinkIcon className="w-5 h-5" />
-              </button>
-            </div>
-            <EditorContent 
-              editor={editor} 
-              className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none p-4 min-h-[400px] focus:outline-none" 
-            />
-          </div>
-        </div>
-
         {/* Read Time */}
         <div>
-          <label htmlFor="read_time" className="block text-sm font-medium text-gray-700">
-            Read Time (minutes)
+          <label htmlFor="read_time" className="block text-sm font-medium">
+            Read Time (minutes) <span className="text-red-500">*</span>
           </label>
           <input
             type="number"
             id="read_time"
             value={post.read_time}
-            onChange={(e) => setPost(prev => ({ ...prev, read_time: parseInt(e.target.value) || 0 }))}
+            onChange={(e) => setPost((prev: BlogPost) => ({ ...prev, read_time: parseInt(e.target.value) || 0 }))}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm"
             min="0"
             required
+          />
+        </div>
+
+        {/* Content Editor */}
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Content <span className="text-red-500">*</span>
+          </label>
+          <RichTextEditor
+            ref={editorRef}
+            content={post.content}
+            setContent={(content: string) => setPost((prev: BlogPost) => ({ ...prev, content }))}
+            className="mb-6"
           />
         </div>
 
@@ -710,19 +384,13 @@ export default function NewBlogPostPage() {
             type="checkbox"
             id="published"
             checked={post.published}
-            onChange={(e) => setPost(prev => ({ ...prev, published: e.target.checked }))}
+            onChange={(e) => setPost((prev: BlogPost) => ({ ...prev, published: e.target.checked }))}
             className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
           />
           <label htmlFor="published" className="ml-2 block text-sm text-gray-900">
             Publish immediately
           </label>
         </div>
-
-        {error && (
-          <div className="text-red-600 text-sm">
-            {error}
-          </div>
-        )}
 
         {/* Form Actions */}
         <div className="flex justify-end space-x-3">
@@ -744,4 +412,4 @@ export default function NewBlogPostPage() {
       </form>
     </div>
   );
-} 
+}

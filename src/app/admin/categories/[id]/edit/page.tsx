@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useFlashMessage } from '@/components/FlashMessage';
 import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Link from 'next/link';
@@ -29,6 +30,7 @@ export default function EditCategoryPage({ params }: { params: { id: string } })
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { showMessage } = useFlashMessage();
 
   useEffect(() => {
     if (params.id !== 'new') {
@@ -144,7 +146,7 @@ export default function EditCategoryPage({ params }: { params: { id: string } })
       router.push('/admin/categories');
     } catch (error: any) {
       console.error('Error saving category:', error);
-      setError(error.message || 'Failed to save category');
+      showMessage(error.message || 'Failed to save category', 'error');
     } finally {
       setSaving(false);
     }
@@ -171,12 +173,6 @@ export default function EditCategoryPage({ params }: { params: { id: string } })
           Back to Categories
         </Link>
       </div>
-
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
-          {error}
-        </div>
-      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
@@ -269,4 +265,4 @@ export default function EditCategoryPage({ params }: { params: { id: string } })
       </form>
     </div>
   );
-} 
+}

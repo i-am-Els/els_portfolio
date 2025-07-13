@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useFlashMessage } from '@/components/FlashMessage';
 import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { motion } from 'framer-motion';
@@ -52,6 +53,7 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { showMessage } = useFlashMessage();
   const [newTech, setNewTech] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -287,7 +289,7 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
         router.push('/admin/projects');
       }
     } catch (error: any) {
-      setError(error.message);
+      showMessage(error.message || 'An error occurred', 'error');
     } finally {
       setSaving(false);
     }
@@ -332,12 +334,6 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
             Back to Projects
           </Link>
         </div>
-
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
-            {error}
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
@@ -566,4 +562,4 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
       </div>
     </div>
   );
-} 
+}

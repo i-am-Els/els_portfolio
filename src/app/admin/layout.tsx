@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import AdminLayout from './AdminLayout';
+import { FlashMessageProvider } from '@/components/FlashMessage';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -19,7 +20,9 @@ export default function AdminRootLayout({
     <html lang="en">
       <body className={inter.className}>
         <div id="admin-root">
-          <AdminLayout>{children}</AdminLayout>
+          <FlashMessageProvider>
+            <AdminLayout>{children}</AdminLayout>
+          </FlashMessageProvider>
         </div>
       </body>
     </html>
