@@ -28,6 +28,7 @@ interface BlogPost {
 }
 
 export default function NewBlogPostPage() {
+  const [editorTab, setEditorTab] = useState<'edit' | 'preview'>('edit');
   const [post, setPost] = useState<BlogPost>({
     title: '',
     slug: '',
@@ -148,6 +149,17 @@ export default function NewBlogPostPage() {
         .single();
       if (createError || !created) throw createError || new Error('Blog not created');
       const blogId = created.id?.toString() || created.slug;
+
+      // Insert selected categories for this blog post
+      if (selectedCategoryIds.length > 0) {
+        const { error: catError } = await supabase
+          .from('blog_post_categories')
+          .insert(selectedCategoryIds.map(categoryId => ({
+            blog_post_id: blogId,
+            category_id: categoryId
+          })));
+        if (catError) throw catError;
+      }
 
       const pendingImages = editorRef.current?.getPendingImages() || {};
       const replaceMap: { [localUrl: string]: string } = {};
@@ -370,12 +382,35 @@ export default function NewBlogPostPage() {
           <label className="block text-sm font-medium mb-2">
             Content <span className="text-red-500">*</span>
           </label>
-          <RichTextEditor
-            ref={editorRef}
-            content={post.content}
-            setContent={(content: string) => setPost((prev: BlogPost) => ({ ...prev, content }))}
-            className="mb-6"
-          />
+          {/* Editor/Preview Tabs */}
+          <div className="flex mb-2 border-b">
+            <button
+              type="button"
+              className={`px-4 py-2 focus:outline-none ${editorTab === 'edit' ? 'border-b-2 border-blue-500 font-semibold text-blue-600' : 'text-gray-500'}`}
+              onClick={() => setEditorTab('edit')}
+            >
+              Edit
+            </button>
+            <button
+              type="button"
+              className={`px-4 py-2 focus:outline-none ${editorTab === 'preview' ? 'border-b-2 border-blue-500 font-semibold text-blue-600' : 'text-gray-500'}`}
+              onClick={() => setEditorTab('preview')}
+            >
+              Preview
+            </button>
+          </div>
+          {editorTab === 'edit' ? (
+            <RichTextEditor
+              ref={editorRef}
+              content={post.content}
+              setContent={(content) => setPost((prev: BlogPost) => ({ ...prev, content }))}
+              className="min-h-[300px]"
+            />
+          ) : (
+            <div className="prose max-w-none border rounded p-4 bg-white min-h-[300px]">
+              <div dangerouslySetInnerHTML={{ __html: post.content }} />
+            </div>
+          )}
         </div>
 
         {/* Published Status */}

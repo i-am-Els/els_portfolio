@@ -66,6 +66,10 @@ export default function BlogPostsPage() {
         .from('blog-images')
         .list(`blog-images/${id}/thumbnail`);
 
+      const { data: files2 } = await supabase.storage
+        .from('blog-images')
+        .list(`blog-images/${id}/content`);
+
       if (files && files.length > 0) {
         // Delete all files in the thumbnail folder
         const filesToDelete = files.map(file => `blog-images/${id}/thumbnail/${file.name}`);
@@ -73,6 +77,14 @@ export default function BlogPostsPage() {
           .from('blog-images')
           .remove(filesToDelete);
       }
+
+      if (files2 && files2.length > 0) {
+        // Delete all files in the contents folder
+        const filesToDelete = files2.map(file => `blog-images/${id}/content/${file.name}`);
+        await supabase.storage
+          .from('blog-images')
+          .remove(filesToDelete);
+      }        
 
       // Delete the blog post record
       const { error } = await supabase

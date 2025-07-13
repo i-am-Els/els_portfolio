@@ -38,6 +38,7 @@ interface PageProps {
 }
 
 export default function EditBlogPostPage({ params }: PageProps) {
+  const [editorTab, setEditorTab] = useState<'edit' | 'preview'>('edit');
   const [post, setPost] = useState<BlogPost>({
     title: '',
     slug: '',
@@ -73,6 +74,8 @@ export default function EditBlogPostPage({ params }: PageProps) {
     }
   }, [params.id]);
 
+  
+
 
 
   const fetchCategories = async () => {
@@ -92,6 +95,7 @@ export default function EditBlogPostPage({ params }: PageProps) {
 
   const fetchPost = async () => {
     try {
+      console.log('[DEBUG] fetchPost called');
       const { data, error } = await supabase
         .from('blog_posts')
         .select('*')
@@ -110,9 +114,9 @@ export default function EditBlogPostPage({ params }: PageProps) {
           .from('blog_post_categories')
           .select('category_id')
           .eq('blog_post_id', params.id);
-
+        console.log('[DEBUG] blog_post_categories result:', categoryData, categoryError);
         if (categoryError) throw categoryError;
-        setSelectedCategoryIds(categoryData.map(c => c.category_id.toString()));
+        setSelectedCategoryIds((categoryData || []).map(c => c.category_id.toString()));
       }
     } catch (error: any) {
       console.error('Error fetching post:', error);
@@ -397,23 +401,29 @@ export default function EditBlogPostPage({ params }: PageProps) {
           Categories
         </label>
         <div className="mt-2 space-y-2">
-          {categories.map(category => (
-            <label key={category.id} className="inline-flex items-center mr-4">
-              <input
-                type="checkbox"
-                checked={selectedCategoryIds.includes(category.id)}
-                onChange={e => {
-                  if (e.target.checked) {
-                    setSelectedCategoryIds([...selectedCategoryIds, category.id]);
-                  } else {
-                    setSelectedCategoryIds(selectedCategoryIds.filter(id => id !== category.id));
-                  }
-                }}
-                className="rounded border-gray-300 text-black focus:ring-black"
-              />
-              <span className="ml-2 text-sm text-gray-700">{category.name}</span>
-            </label>
-          ))}
+          {categories.length > 0 && selectedCategoryIds ? (
+            <div className="mt-2 space-y-2">
+              {categories.map(category => (
+                <label key={category.id} className="inline-flex items-center mr-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedCategoryIds.includes(category.id)}
+                    onChange={e => {
+                      if (e.target.checked) {
+                        setSelectedCategoryIds([...selectedCategoryIds, category.id]);
+                      } else {
+                        setSelectedCategoryIds(selectedCategoryIds.filter(id => id !== category.id));
+                      }
+                    }}
+                    className="rounded border-gray-300 text-black focus:ring-black"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">{category.name}</span>
+                </label>
+              ))}
+            </div>
+          ) : (
+            <div className="text-gray-400 text-sm">Loading categories...</div>
+          )}
         </div>
       </div>
       {/* Tags Input */}
@@ -508,12 +518,35 @@ export default function EditBlogPostPage({ params }: PageProps) {
         <label className="block text-sm font-medium mb-2">
           Content <span className="text-red-500">*</span>
         </label>
-        <RichTextEditor
-          ref={editorRef}
-          content={post.content}
-          setContent={content => setPost((prev: BlogPost) => ({ ...prev, content }))}
-          className="mb-6"
-        />
+        {/* Editor/Preview Tabs */}
+        <div className="flex mb-2 border-b">
+          <button
+            type="button"
+            className={`px-4 py-2 focus:outline-none ${editorTab === 'edit' ? 'border-b-2 border-blue-500 font-semibold text-blue-600' : 'text-gray-500'}`}
+            onClick={() => setEditorTab('edit')}
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            className={`px-4 py-2 focus:outline-none ${editorTab === 'preview' ? 'border-b-2 border-blue-500 font-semibold text-blue-600' : 'text-gray-500'}`}
+            onClick={() => setEditorTab('preview')}
+          >
+            Preview
+          </button>
+        </div>
+        {editorTab === 'edit' ? (
+          <RichTextEditor
+            ref={editorRef}
+            content={post.content}
+            setContent={content => setPost(prev => ({ ...prev, content }))}
+            className="min-h-[300px]"
+          />
+        ) : (
+          <div className="prose max-w-none border rounded p-4 bg-white min-h-[300px]">
+            <div dangerouslySetInnerHTML={{ __html: post.content }} />
+          </div>
+        )}
       </div>
       {/* Published Status */}
       <div className="flex items-center">

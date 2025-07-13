@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Center all images in blog content preview and published blog */
+.prose img {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
