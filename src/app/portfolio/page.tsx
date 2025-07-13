@@ -204,7 +204,7 @@ export default function PortfolioPage() {
                       </div>
                       <div className="p-6">
                         <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors duration-300">{project.title}</h3>
-                        <p className="text-gray-600 mb-4">{project.description}</p>
+                        <p className="text-gray-600 mb-4">{project.description.length > 150? project.description.slice(0, 150) + '...' : project.description}</p>
                         <div className="flex flex-wrap gap-2">
                           {project.technologies.map((tech, index) => (
                             <span

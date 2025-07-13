@@ -147,7 +147,7 @@ export default function Projects() {
                       {project.title}
                     </h3>
                     <p className="text-gray-700 mb-4 leading-relaxed">
-                      {project.description}
+                      {project.description.length > 150? project.description.slice(0, 150) + '...' : project.description}
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {project.technologies.map(tech => (
