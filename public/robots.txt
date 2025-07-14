@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://eniola-olawale-portfolio.vercel.app/sitemap.xml
+Sitemap: https://eniola-olawale-portfolio.vercel.app/api/sitemap.xml
