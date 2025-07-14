@@ -17,7 +17,8 @@ export default function AdminLayout({
   const [isLoading, setIsLoading] = useState(true);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const router = useRouter();
-  const pathname = usePathname();
+  const rawPathname = usePathname();
+  const pathname = rawPathname ?? '';
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -167,4 +168,4 @@ export default function AdminLayout({
       </motion.main>
     </div>
   );
-} 
+}
