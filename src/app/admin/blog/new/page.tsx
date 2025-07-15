@@ -236,7 +236,7 @@ export default function NewBlogPostPage() {
 
         <div>
           <label htmlFor="slug" className="block text-sm font-medium text-gray-700">
-            Slug
+            Slug <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -244,6 +244,7 @@ export default function NewBlogPostPage() {
             value={post.slug}
             onChange={(e) => setPost((prev: BlogPost) => ({ ...prev, slug: e.target.value }))}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            required
           />
         </div>
 
