@@ -78,7 +78,7 @@ export default function Home() {
             transition={{ duration: 0.6 }}
             className="section-label text-[#c8ff00] mb-6"
           >
-            PORTFOLIO — 2025
+            PORTFOLIO — <script>document.write(new Date().getFullYear());</script>
           </motion.p>
 
           {/* Giant name */}

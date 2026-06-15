@@ -16,7 +16,7 @@ export default function Navigation() {
   }, []);
 
   const navLinks = [
-    { href: '/portfolio', label: 'Work' },
+    { href: '/#portfolio', label: 'Work' },
     { href: '/about', label: 'About' },
     { href: '/blog', label: 'Blog' },
     { href: '/#contact', label: 'Contact' },
