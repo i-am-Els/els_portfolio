@@ -2,9 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { fadeUp, staggerContainer } from '@/lib/motion';
 import Image from 'next/image';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Link from 'next/link';
+
+const MotionLink = motion.create(Link);
 
 interface Project {
   id: string;
@@ -109,75 +112,116 @@ export default function Portfolio() {
             <div className="w-6 h-6 border border-[#c8ff00] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
-          <div className="space-y-4">
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-60px' }}
+          >
             <AnimatePresence>
               {filteredProjects.length > 0 ? (
-                filteredProjects.map((project, index) => {
-                  const categoryLabel = project.project_categories?.[0]?.categories?.slug?.replace(/-/g, ' ').toUpperCase() || 'PROJECT';
-                  return (
-                    <motion.div
-                      key={project.id}
-                      layout
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
-                    >
-                      <Link href={`/portfolio/${project.slug}`} className="group block relative overflow-hidden" style={{ height: '420px' }}>
-                        {/* Background image */}
-                        {project.image_url ? (
-                          <Image
-                            src={project.image_url}
-                            alt={project.title}
-                            fill
-                            className="object-cover transition-transform duration-700 group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="absolute inset-0 bg-[#141414]" />
-                        )}
-                        {/* Dark overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/10" />
-
-                        {/* Arrow icon top right */}
-                        <div className="absolute top-4 right-4 w-9 h-9 border border-[#c8ff00] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <span className="text-[#c8ff00] text-sm">↗</span>
+                <>
+                  {/* First card — full-bleed hero card */}
+                  <motion.div
+                    key={filteredProjects[0].id}
+                    variants={fadeUp}
+                    layout
+                  >
+                    <Link href={`/portfolio/${filteredProjects[0].slug}`} className="group block relative overflow-hidden" style={{ height: '420px' }}>
+                      {filteredProjects[0].image_url ? (
+                        <Image
+                          src={filteredProjects[0].image_url}
+                          alt={filteredProjects[0].title}
+                          fill
+                          className="object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-[#141414]" />
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/10" />
+                      <div className="absolute top-4 right-4 w-9 h-9 border border-[#c8ff00] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-[#c8ff00] text-sm">↗</span>
+                      </div>
+                      <div className="absolute bottom-0 left-0 p-8">
+                        <span className="section-label text-[#c8ff00] block mb-2">
+                          {filteredProjects[0].project_categories?.[0]?.categories?.slug?.replace(/-/g, ' ').toUpperCase() || 'PROJECT'}
+                        </span>
+                        <h3 className="text-3xl font-black text-white mb-3">{filteredProjects[0].title}</h3>
+                        <p className="text-white/50 text-sm max-w-lg mb-4 hidden group-hover:block">
+                          {filteredProjects[0].description.slice(0, 120)}{filteredProjects[0].description.length > 120 ? '...' : ''}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {filteredProjects[0].technologies.map((tech, i) => (
+                            <span key={i} className="tag-pill">{tech}</span>
+                          ))}
                         </div>
+                      </div>
+                    </Link>
+                  </motion.div>
 
-                        {/* Content bottom left */}
-                        <div className="absolute bottom-0 left-0 p-8">
-                          <span className="section-label text-[#c8ff00] block mb-2">{categoryLabel}</span>
-                          <h3 className="text-3xl font-black text-white mb-3">{project.title}</h3>
-                          <p className="text-white/50 text-sm max-w-lg mb-4 hidden group-hover:block">
-                            {project.description.slice(0, 120)}{project.description.length > 120 ? '...' : ''}
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {project.technologies.map((tech, i) => (
-                              <span key={i} className="tag-pill">{tech}</span>
-                            ))}
-                          </div>
-                        </div>
-                      </Link>
-                    </motion.div>
-                  );
-                })
+                  {/* Remaining cards — 2-column grid */}
+                  {filteredProjects.length > 1 && (
+                    <div className="grid grid-cols-2 gap-3 mt-3">
+                      {filteredProjects.slice(1).map((project) => {
+                        const categoryLabel = project.project_categories?.[0]?.categories?.slug?.replace(/-/g, ' ').toUpperCase() || 'PROJECT';
+                        return (
+                          <motion.div key={project.id} variants={fadeUp} layout>
+                            <Link
+                              href={`/portfolio/${project.slug}`}
+                              className="group block relative overflow-hidden"
+                              style={{ height: '220px' }}
+                            >
+                              {project.image_url ? (
+                                <Image
+                                  src={project.image_url}
+                                  alt={project.title}
+                                  fill
+                                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                />
+                              ) : (
+                                <div className="absolute inset-0 bg-[#141414]" />
+                              )}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/10" />
+                              <div className="absolute top-3 right-3 w-7 h-7 border border-[#c8ff00] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <span className="text-[#c8ff00] text-xs">↗</span>
+                              </div>
+                              <div className="absolute bottom-0 left-0 p-5">
+                                <span className="section-label text-[#c8ff00] block mb-1">{categoryLabel}</span>
+                                <h3 className="text-xl font-black text-white mb-2">{project.title}</h3>
+                                <p className="text-white/50 text-xs max-w-xs mb-3 hidden group-hover:block">
+                                  {project.description.slice(0, 80)}{project.description.length > 80 ? '...' : ''}
+                                </p>
+                              </div>
+                            </Link>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="flex items-center justify-center h-64 border border-white/10">
                   <p className="text-white/30 text-sm tracking-widest uppercase">Coming Soon</p>
                 </div>
               )}
             </AnimatePresence>
-          </div>
+          </motion.div>
         )}
 
         {/* View all */}
         {filteredProjects.length > 0 && (
           <div className="mt-12">
-            <Link href="/portfolio" className="btn-ghost inline-flex items-center gap-3 text-xs">
+            <MotionLink
+              href="/portfolio"
+              className="inline-flex items-center gap-3 text-xs font-bold tracking-widest uppercase text-white border border-white/30 px-5 py-3"
+              whileHover={{ backgroundColor: '#c8ff00', color: '#0d0d0d', borderColor: '#c8ff00' }}
+              transition={{ duration: 0.25 }}
+            >
               View All Projects
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
-            </Link>
+            </MotionLink>
           </div>
         )}
       </div>
