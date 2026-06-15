@@ -135,3 +135,9 @@
   h2 { font-size: clamp(1.5rem, 4vw, 2.5rem); }
   h3 { font-size: clamp(1.1rem, 2vw, 1.5rem); }
 }
+
+/* Hide OS cursor when JS-powered custom cursor is active */
+.custom-cursor,
+.custom-cursor * {
+  cursor: none !important;
+}
