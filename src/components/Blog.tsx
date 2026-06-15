@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from 'framer-motion';
+import { staggerContainer, fadeUp, lineGrow } from '@/lib/motion';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
@@ -84,9 +85,16 @@ export default function Blog() {
     <section id="blog" className="bg-[#0d0d0d] py-32">
       <div className="max-w-7xl mx-auto px-6">
         {/* Section label */}
-        <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-16">
+        <div className="flex items-center justify-between pb-4 mb-16 relative">
           <span className="section-label text-[#c8ff00]">05 / Writing</span>
           <Link href="/blog" className="section-label text-white/30 hover:text-white transition-colors">View All →</Link>
+          <motion.div
+            className="absolute bottom-0 left-0 right-0 h-px bg-white/10"
+            variants={lineGrow}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          />
         </div>
 
         {/* Category filters */}
@@ -113,17 +121,21 @@ export default function Blog() {
             <div className="w-6 h-6 border border-[#c8ff00] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-white/5">
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-3 gap-px bg-white/5"
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-60px' }}
+          >
             <AnimatePresence>
               {filteredPosts.length > 0 ? (
-                filteredPosts.map((post, index) => (
+                filteredPosts.map((post) => (
                   <motion.div
                     key={post.id}
                     layout
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
+                    variants={fadeUp}
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
                     className="bg-[#0d0d0d] group"
                   >
                     <Link href={`/blog/${post.slug}`} className="block">
@@ -167,7 +179,7 @@ export default function Blog() {
                 </div>
               )}
             </AnimatePresence>
-          </div>
+          </motion.div>
         )}
       </div>
     </section>
