@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { heroContainer, clipReveal, lineGrow, fadeUp, fadeIn } from '@/lib/motion';
 import Navigation from '@/components/Navigation';
 import About from '@/components/About';
 import Portfolio from '@/components/Portfolio';
@@ -72,61 +73,60 @@ export default function Home() {
 
         {/* Tag line */}
         <div className="relative max-w-7xl mx-auto px-16 w-full">
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6 }}
-            className="section-label text-[#c8ff00] mb-6"
-          >
-            PORTFOLIO — <script>document.write(new Date().getFullYear());</script>
-          </motion.p>
-
-          {/* Giant name */}
-          <div className="overflow-hidden">
-            <motion.h1
-              initial={{ y: 80, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-              className="font-black leading-none text-white uppercase"
-              style={{ fontSize: 'clamp(4rem, 14vw, 13rem)', letterSpacing: '-0.02em' }}
-            >
-              ENIOLA
-            </motion.h1>
-          </div>
-          <div className="overflow-hidden">
-            <motion.h1
-              initial={{ y: 80, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-              className="font-black leading-none text-outline uppercase"
-              style={{ fontSize: 'clamp(4rem, 14vw, 13rem)', letterSpacing: '-0.02em' }}
-            >
-              OLAWALE
-            </motion.h1>
-          </div>
-
-          {/* Divider */}
           <motion.div
-            initial={{ scaleX: 0 }}
-            animate={{ scaleX: 1 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="h-px bg-white/10 my-8 origin-left"
-          />
-
-          {/* Bottom row */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="flex flex-col md:flex-row items-start md:items-end justify-between gap-8"
+            variants={heroContainer}
+            initial="hidden"
+            animate="visible"
           >
-            <p className="text-white/40 text-sm leading-relaxed max-w-xs">
-              Crafting immersive worlds and interactive experiences — from core gameplay systems to hand-sculpted characters. Based in Nigeria, open to global opportunities.
-            </p>
-            <div className="flex gap-3">
-              <a href="#portfolio" className="btn-acid text-xs">View Work</a>
-              <a href="#contact" className="btn-ghost text-xs">Get in Touch</a>
+            {/* Tagline */}
+            <motion.p
+              variants={fadeIn}
+              className="section-label text-[#c8ff00] mb-6"
+            >
+              PORTFOLIO — {new Date().getFullYear()}
+            </motion.p>
+
+            {/* "ENIOLA" — clip reveal */}
+            <div className="overflow-hidden">
+              <motion.h1
+                variants={clipReveal}
+                className="font-black leading-none text-white uppercase"
+                style={{ fontSize: 'clamp(4rem, 14vw, 13rem)', letterSpacing: '-0.02em' }}
+              >
+                ENIOLA
+              </motion.h1>
             </div>
+
+            {/* "OLAWALE" — clip reveal */}
+            <div className="overflow-hidden">
+              <motion.h1
+                variants={clipReveal}
+                className="font-black leading-none text-outline uppercase"
+                style={{ fontSize: 'clamp(4rem, 14vw, 13rem)', letterSpacing: '-0.02em' }}
+              >
+                OLAWALE
+              </motion.h1>
+            </div>
+
+            {/* Divider */}
+            <motion.div
+              variants={lineGrow}
+              className="h-px bg-white/10 my-8"
+            />
+
+            {/* Bottom row */}
+            <motion.div
+              variants={fadeUp}
+              className="flex flex-col md:flex-row items-start md:items-end justify-between gap-8"
+            >
+              <p className="text-white/40 text-sm leading-relaxed max-w-xs">
+                Crafting immersive worlds and interactive experiences — from core gameplay systems to hand-sculpted characters. Based in Nigeria, open to global opportunities.
+              </p>
+              <div className="flex gap-3">
+                <a href="#portfolio" className="btn-acid text-xs">View Work</a>
+                <a href="#contact" className="btn-ghost text-xs">Get in Touch</a>
+              </div>
+            </motion.div>
           </motion.div>
         </div>
       </section>
