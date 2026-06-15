@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { clipReveal, staggerContainer, fadeUp, fadeIn } from '@/lib/motion';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Link from 'next/link';
 
@@ -94,9 +95,17 @@ export default function ContactFooter() {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-5xl font-black text-white leading-tight mb-6">
-              Let's build something great.
-            </h2>
+            <div className="overflow-hidden mb-6">
+              <motion.h2
+                variants={clipReveal}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                className="text-5xl font-black text-white leading-tight"
+              >
+                Let's build something great.
+              </motion.h2>
+            </div>
             <p className="text-white/40 text-sm leading-relaxed mb-8 max-w-sm">
               Open to full-time roles, contract work, and collaborative projects in the games industry. I respond to all serious inquiries within 48 hours.
             </p>
@@ -122,20 +131,27 @@ export default function ContactFooter() {
             </div>
 
             {/* Social icons */}
-            <div className="flex gap-3">
+            <motion.div
+              className="flex gap-3"
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+            >
               {socialLinks.map(s => (
-                <a
+                <motion.a
                   key={s.label}
                   href={s.url!}
                   target="_blank"
                   rel="noopener noreferrer"
+                  variants={fadeIn}
                   className="w-10 h-10 border border-white/15 flex items-center justify-center text-white/50 hover:border-[#c8ff00] hover:text-[#c8ff00] transition-colors"
                   aria-label={s.label}
                 >
                   {s.icon}
-                </a>
+                </motion.a>
               ))}
-            </div>
+            </motion.div>
           </motion.div>
 
           {/* Right: Form */}
@@ -145,8 +161,15 @@ export default function ContactFooter() {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
+            <motion.form
+              onSubmit={handleSubmit}
+              className="space-y-5"
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-40px' }}
+            >
+              <motion.div variants={fadeUp}>
                 <label className="section-label text-white/30 block mb-2">Name</label>
                 <input
                   type="text"
@@ -157,8 +180,8 @@ export default function ContactFooter() {
                   placeholder="Your name"
                   className="w-full bg-[#141414] border border-white/10 px-4 py-3 text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#c8ff00] transition-colors"
                 />
-              </div>
-              <div>
+              </motion.div>
+              <motion.div variants={fadeUp}>
                 <label className="section-label text-white/30 block mb-2">Email</label>
                 <input
                   type="email"
@@ -169,8 +192,8 @@ export default function ContactFooter() {
                   placeholder="your@email.com"
                   className="w-full bg-[#141414] border border-white/10 px-4 py-3 text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#c8ff00] transition-colors"
                 />
-              </div>
-              <div>
+              </motion.div>
+              <motion.div variants={fadeUp}>
                 <label className="section-label text-white/30 block mb-2">Message</label>
                 <textarea
                   name="message"
@@ -181,22 +204,24 @@ export default function ContactFooter() {
                   placeholder="Tell me about the project or role..."
                   className="w-full bg-[#141414] border border-white/10 px-4 py-3 text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#c8ff00] transition-colors resize-none"
                 />
-              </div>
+              </motion.div>
 
               {status === 'error' && <p className="text-red-400 text-xs">{errorMessage}</p>}
               {status === 'success' && <p className="text-[#c8ff00] text-xs">Message sent successfully!</p>}
 
-              <button
-                type="submit"
-                disabled={status === 'loading'}
-                className={`w-full btn-acid flex items-center justify-center gap-3 text-xs ${status === 'loading' ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                {status === 'loading' ? 'Sending...' : 'Send Message'}
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                </svg>
-              </button>
-            </form>
+              <motion.div variants={fadeUp}>
+                <button
+                  type="submit"
+                  disabled={status === 'loading'}
+                  className={`w-full btn-acid flex items-center justify-center gap-3 text-xs ${status === 'loading' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {status === 'loading' ? 'Sending...' : 'Send Message'}
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
+                </button>
+              </motion.div>
+            </motion.form>
           </motion.div>
         </div>
       </div>
