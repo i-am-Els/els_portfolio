@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import Link from 'next/link';
 
 interface Profile {
   id: string;
@@ -16,11 +17,7 @@ interface Profile {
 }
 
 export default function ContactFooter() {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    message: '',
-  });
+  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -29,18 +26,13 @@ export default function ContactFooter() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const { data, error } = await supabase
-          .from('profile')
-          .select('*')
-          .single();
-
+        const { data, error } = await supabase.from('profile').select('*').single();
         if (error) throw error;
         setProfile(data);
       } catch (error) {
         console.error('Error fetching profile:', error);
       }
     };
-
     fetchProfile();
   }, [supabase]);
 
@@ -48,20 +40,13 @@ export default function ContactFooter() {
     e.preventDefault();
     setStatus('loading');
     setErrorMessage('');
-
     try {
       const response = await fetch('/api/contact', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to send message');
-      }
-
+      if (!response.ok) throw new Error('Failed to send message');
       setStatus('success');
       setFormData({ name: '', email: '', message: '' });
     } catch (error) {
@@ -75,193 +60,157 @@ export default function ContactFooter() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const socialLinks = [
+    { url: profile?.github_url, label: 'GitHub', icon: (
+      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+      </svg>
+    )},
+    { url: profile?.linkedin_url, label: 'LinkedIn', icon: (
+      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+      </svg>
+    )},
+    { url: profile?.twitter_url, label: 'Twitter', icon: (
+      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+      </svg>
+    )},
+  ].filter(s => s.url);
+
   return (
-    <footer className="bg-[#121212] text-white py-8">
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Contact Form */}
+    <footer id="contact" className="bg-[#0d0d0d] border-t border-white/5">
+      {/* Contact section */}
+      <div className="max-w-7xl mx-auto px-6 py-24">
+        <div className="flex items-center gap-4 border-b border-white/10 pb-4 mb-16">
+          <span className="section-label text-[#c8ff00]">04 / Contact</span>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-16">
+          {/* Left */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <h3 className="text-xl font-semibold mb-4">Get in Touch</h3>
-            <form onSubmit={handleSubmit} className="space-y-3">
+            <h2 className="text-5xl font-black text-white leading-tight mb-6">
+              Let's build something great.
+            </h2>
+            <p className="text-white/40 text-sm leading-relaxed mb-8 max-w-sm">
+              Open to full-time roles, contract work, and collaborative projects in the games industry. I respond to all serious inquiries within 48 hours.
+            </p>
+
+            <div className="space-y-3 mb-8">
+              {profile?.email && (
+                <div className="flex items-center gap-3">
+                  <svg className="w-4 h-4 text-[#c8ff00] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  <a href={`mailto:${profile.email}`} className="text-white/50 text-sm hover:text-white transition-colors">{profile.email}</a>
+                </div>
+              )}
+              {profile?.location && (
+                <div className="flex items-center gap-3">
+                  <svg className="w-4 h-4 text-[#c8ff00] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span className="text-white/50 text-sm">{profile.location} — Remote Worldwide</span>
+                </div>
+              )}
+            </div>
+
+            {/* Social icons */}
+            <div className="flex gap-3">
+              {socialLinks.map(s => (
+                <a
+                  key={s.label}
+                  href={s.url!}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 border border-white/15 flex items-center justify-center text-white/50 hover:border-[#c8ff00] hover:text-[#c8ff00] transition-colors"
+                  aria-label={s.label}
+                >
+                  {s.icon}
+                </a>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Right: Form */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium mb-1 text-gray-300">
-                  Name
-                </label>
+                <label className="section-label text-white/30 block mb-2">Name</label>
                 <input
                   type="text"
-                  id="name"
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 focus:border-primary focus:outline-none text-white placeholder-gray-400 transition-colors"
                   placeholder="Your name"
+                  className="w-full bg-[#141414] border border-white/10 px-4 py-3 text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#c8ff00] transition-colors"
                 />
               </div>
               <div>
-                <label htmlFor="email" className="block text-sm font-medium mb-1 text-gray-300">
-                  Email
-                </label>
+                <label className="section-label text-white/30 block mb-2">Email</label>
                 <input
                   type="email"
-                  id="email"
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 focus:border-primary focus:outline-none text-white placeholder-gray-400 transition-colors"
-                  placeholder="Your email"
+                  placeholder="your@email.com"
+                  className="w-full bg-[#141414] border border-white/10 px-4 py-3 text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#c8ff00] transition-colors"
                 />
               </div>
               <div>
-                <label htmlFor="message" className="block text-sm font-medium mb-1 text-gray-300">
-                  Message
-                </label>
+                <label className="section-label text-white/30 block mb-2">Message</label>
                 <textarea
-                  id="message"
                   name="message"
                   value={formData.message}
                   onChange={handleChange}
                   required
-                  rows={3}
-                  className="w-full px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 focus:border-primary focus:outline-none text-white placeholder-gray-400 transition-colors resize-none"
-                  placeholder="Your message"
-                ></textarea>
+                  rows={5}
+                  placeholder="Tell me about the project or role..."
+                  className="w-full bg-[#141414] border border-white/10 px-4 py-3 text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#c8ff00] transition-colors resize-none"
+                />
               </div>
-              {status === 'error' && (
-                <div className="text-red-400 text-sm">{errorMessage}</div>
-              )}
-              {status === 'success' && (
-                <div className="text-green-400 text-sm">Message sent successfully!</div>
-              )}
-              <motion.button
+
+              {status === 'error' && <p className="text-red-400 text-xs">{errorMessage}</p>}
+              {status === 'success' && <p className="text-[#c8ff00] text-xs">Message sent successfully!</p>}
+
+              <button
                 type="submit"
                 disabled={status === 'loading'}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`w-full bg-primary/90 text-white py-2 px-4 rounded-lg 
-                  hover:bg-primary hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/20 
-                  active:scale-[0.98] active:bg-primary/80
-                  transition-all duration-300 ease-in-out
-                  font-medium text-sm uppercase tracking-wider
-                  ${status === 'loading' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`w-full btn-acid flex items-center justify-center gap-3 text-xs ${status === 'loading' ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {status === 'loading' ? 'Sending...' : 'Send Message'}
-              </motion.button>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
+              </button>
             </form>
           </motion.div>
-
-          {/* Contact Info & Social Links */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="space-y-6"
-          >
-            <div>
-              <h3 className="text-xl font-semibold mb-4">Contact Information</h3>
-              <div className="space-y-3">
-                {profile?.email && (
-                  <div className="flex items-center space-x-3">
-                    <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    <a href={`mailto:${profile.email}`} className="text-gray-300 hover:text-primary transition-colors">
-                      {profile.email}
-                    </a>
-                  </div>
-                )}
-                {profile?.phone && (
-                  <div className="flex items-center space-x-3">
-                    <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
-                    <a href={`tel:${profile.phone}`} className="text-gray-300 hover:text-primary transition-colors">
-                      {profile.phone}
-                    </a>
-                  </div>
-                )}
-                {profile?.location && (
-                  <div className="flex items-center space-x-3">
-                    <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span className="text-gray-300">{profile.location}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-xl font-semibold mb-4">Connect With Me</h3>
-              <div className="space-y-3">
-                {profile?.github_url && (
-                  <a
-                    href={profile.github_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center space-x-3 text-gray-300 hover:text-primary transition-colors"
-                  >
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                    </svg>
-                    <span>GitHub</span>
-                  </a>
-                )}
-                {profile?.linkedin_url && (
-                  <a
-                    href={profile.linkedin_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center space-x-3 text-gray-300 hover:text-primary transition-colors"
-                  >
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
-                    </svg>
-                    <span>LinkedIn</span>
-                  </a>
-                )}
-                {profile?.artstation_url && (
-                  <a
-                    href={profile.artstation_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center space-x-3 text-gray-300 hover:text-primary transition-colors"
-                  >
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M0 17.723l2.027 3.505h.001a2.424 2.424 0 0 0 2.164 1.333h13.457l-2.792-4.838H0zm24 .025c0-.484-.143-.935-.388-1.314L15.728 2.728a2.424 2.424 0 0 0-2.142-1.289H9.419L21.598 22.54l1.92-3.325c.378-.637.482-.919.482-1.467zm-11.129-3.462L7.428 4.858l-5.444 9.428h10.887z"/>
-                    </svg>
-                    <span>ArtStation</span>
-                  </a>
-                )}
-                {profile?.twitter_url && (
-                  <a
-                    href={profile.twitter_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center space-x-3 text-gray-300 hover:text-primary transition-colors"
-                  >
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                    </svg>
-                    <span>Twitter</span>
-                  </a>
-                )}
-              </div>
-            </div>
-          </motion.div>
         </div>
+      </div>
 
-        {/* Copyright */}
-        <div className="mt-8 pt-4 border-t border-white/10 text-center text-gray-400">
-          <p>© {new Date().getFullYear()} Eniola Olawale. All rights reserved.</p>
+      {/* Footer bar */}
+      <div className="border-t border-white/5 max-w-7xl mx-auto px-6 py-5 flex flex-col md:flex-row items-center justify-between gap-3">
+        <span className="text-white font-black text-xs tracking-widest">ENIOLA.O</span>
+        <span className="section-label text-white/20">© {new Date().getFullYear()} — Game Developer & Artist</span>
+        <div className="flex gap-6">
+          {socialLinks.map(s => (
+            <a key={s.label} href={s.url!} target="_blank" rel="noopener noreferrer" className="section-label text-white/30 hover:text-white transition-colors">{s.label.toUpperCase()}</a>
+          ))}
         </div>
       </div>
     </footer>
   );
-} 
+}

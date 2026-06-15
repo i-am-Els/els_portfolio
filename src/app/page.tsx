@@ -1,130 +1,139 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { getRecentProjects, getRecentBlogPosts } from '@/data/home-content';
 import Navigation from '@/components/Navigation';
 import About from '@/components/About';
 import Portfolio from '@/components/Portfolio';
 import Blog from '@/components/Blog';
 import ContactFooter from '@/components/ContactFooter';
 
-interface Project {
-  id: string;
-  title: string;
-  description: string;
-  image_url: string | null;
-  project_url: string | null;
-  github_url: string | null;
-  technologies: string[];
-  created_at: string;
-}
-
-interface BlogPost {
-  id: string;
-  title: string;
-  content: string;
-  image_url: string | null;
-  created_at: string;
-}
-
 export default function Home() {
-  const [recentProjects, setRecentProjects] = useState<Project[]>([]);
-  const [recentBlogPosts, setRecentBlogPosts] = useState<BlogPost[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  // Particle dots effect matching Figma design
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [projects, posts] = await Promise.all([
-          getRecentProjects(),
-          getRecentBlogPosts()
-        ]);
-        setRecentProjects(projects);
-        setRecentBlogPosts(posts);
-      } catch (error) {
-        console.error('Error fetching home data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-    fetchData();
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const dots: { x: number; y: number; opacity: number; size: number }[] = [];
+    for (let i = 0; i < 60; i++) {
+      dots.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        opacity: Math.random() * 0.4 + 0.1,
+        size: Math.random() * 2 + 1,
+      });
+    }
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      dots.forEach(d => {
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(200, 255, 0, ${d.opacity})`;
+        ctx.fill();
+      });
+    };
+    draw();
+
+    return () => window.removeEventListener('resize', resize);
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#f5f3f0] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen bg-[#0d0d0d]">
       <Navigation />
-      
-      {/* Hero Section */}
-      <section className="relative h-screen flex items-center justify-center">
-        <div className="absolute inset-0">
-          <div className="relative w-full h-full">
-            <img
-              src="/hero-bg.jpg"
-              alt="Hero Background"
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/50 to-background" />
-          </div>
+
+      {/* Hero */}
+      <section className="relative min-h-screen flex flex-col justify-end pb-20 overflow-hidden">
+        {/* Particle canvas */}
+        <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" />
+
+        {/* Vertical label right */}
+        <div className="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2">
+          <span className="section-label text-white/20 [writing-mode:vertical-rl] tracking-widest">ARTIST</span>
+          <div className="w-px h-16 bg-white/10" />
         </div>
-        <div className="relative z-10 text-center px-4">
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-5xl md:text-7xl font-bold mb-6 text-gray-900 [text-shadow:_2px_2px_0_#e5e7eb,_-2px_-2px_0_#e5e7eb,_2px_-2px_0_#e5e7eb,_-2px_2px_0_#e5e7eb]"
-          >
-            Technical Artist & Game Developer
-          </motion.h1>
+
+        {/* Vertical label left */}
+        <div className="absolute left-6 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2">
+          <div className="w-px h-16 bg-white/10" />
+          <span className="section-label text-white/20 [writing-mode:vertical-rl] tracking-widest">SCROLL</span>
+        </div>
+
+        {/* Tag line */}
+        <div className="relative max-w-7xl mx-auto px-16 w-full">
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-xl md:text-2xl text-gray-700 max-w-3xl mx-auto mb-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6 }}
+            className="section-label text-[#c8ff00] mb-6"
           >
-            Creating immersive experiences through technical art and game development
+            PORTFOLIO — 2025
           </motion.p>
+
+          {/* Giant name */}
+          <div className="overflow-hidden">
+            <motion.h1
+              initial={{ y: 80, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              className="font-black leading-none text-white uppercase"
+              style={{ fontSize: 'clamp(4rem, 14vw, 13rem)', letterSpacing: '-0.02em' }}
+            >
+              ENIOLA
+            </motion.h1>
+          </div>
+          <div className="overflow-hidden">
+            <motion.h1
+              initial={{ y: 80, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+              className="font-black leading-none text-outline uppercase"
+              style={{ fontSize: 'clamp(4rem, 14vw, 13rem)', letterSpacing: '-0.02em' }}
+            >
+              OLAWALE
+            </motion.h1>
+          </div>
+
+          {/* Divider */}
+          <motion.div
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="h-px bg-white/10 my-8 origin-left"
+          />
+
+          {/* Bottom row */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="flex justify-center gap-4"
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="flex flex-col md:flex-row items-start md:items-end justify-between gap-8"
           >
-            <a
-              href="#portfolio"
-              className="px-8 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors duration-300"
-            >
-              View Projects
-            </a>
-            <a
-              href="#blog"
-              className="px-8 py-3 bg-white text-gray-900 rounded-lg hover:bg-gray-100 transition-colors duration-300"
-            >
-              Read Blog
-            </a>
+            <p className="text-white/40 text-sm leading-relaxed max-w-xs">
+              Crafting immersive worlds and interactive experiences — from core gameplay systems to hand-sculpted characters. Based in Nigeria, open to global opportunities.
+            </p>
+            <div className="flex gap-3">
+              <a href="#portfolio" className="btn-acid text-xs">View Work</a>
+              <a href="#contact" className="btn-ghost text-xs">Get in Touch</a>
+            </div>
           </motion.div>
         </div>
       </section>
 
-      {/* About Section */}
-      <About />
-
-      {/* Portfolio Section */}
       <Portfolio />
-
-      {/* Blog Section */}
+      <About />
       <Blog />
-
-      {/* Contact Footer */}
       <ContactFooter />
     </main>
   );

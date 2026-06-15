@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Center all images in blog content preview and published blog */
+/* Center all images in blog content */
 .prose img {
   display: block;
   margin-left: auto;
@@ -13,160 +13,125 @@
   html {
     scroll-behavior: smooth;
   }
+
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 6% 10%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 6% 10%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 201 93% 38%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 24 66% 57%;
-    --secondary-foreground: 240 6% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 0% 55%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --background: 0 0% 5%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 74 100% 50%;
+    --primary-foreground: 0 0% 5%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 55%;
+    --accent: 74 100% 50%;
+    --accent-foreground: 0 0% 5%;
     --destructive: 0 71% 56%;
     --destructive-foreground: 0 0% 100%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 10% 3.9%;
-    --radius: 1.0rem;
+    --border: 0 0% 18%;
+    --input: 0 0% 12%;
+    --ring: 74 100% 50%;
+    --radius: 0rem;
+
+    /* Design tokens */
+    --acid: #c8ff00;
+    --dark: #0d0d0d;
+    --dark-2: #141414;
+    --dark-3: #1a1a1a;
+    --text-dim: #666;
   }
 
-  .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 201 93% 38%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
-  }
-}
-
-@layer base {
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-[#0d0d0d] text-white;
+    font-family: 'Inter', 'Helvetica Neue', sans-serif;
   }
+
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bold tracking-tight;
-  }
-  h1 {
-    @apply text-4xl md:text-5xl lg:text-6xl;
-  }
-  h2 {
-    @apply text-3xl md:text-4xl;
-  }
-  h3 {
-    @apply text-2xl md:text-3xl;
+    @apply font-black tracking-tight;
   }
 }
 
-@layer components {
-  .btn {
-    @apply inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-medium transition-colors;
-  }
-  .btn-primary {
-    @apply bg-primary text-primary-foreground;
-  }
-  .btn-primary:hover {
-    @apply bg-primary;
-    opacity: 0.9;
-  }
-  .btn-secondary {
-    @apply bg-secondary text-secondary-foreground;
-  }
-  .btn-secondary:hover {
-    @apply bg-secondary;
-    opacity: 0.8;
-  }
-  .card {
-    @apply rounded-lg border border-border bg-card p-6 shadow-sm transition-colors hover:border-primary;
-    opacity: 0.5;
-  }
-  .input {
-    @apply rounded-lg border border-input bg-secondary px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
-  }
-  .text-gradient {
-    @apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
-  }
-  .bg-gradient {
-    @apply bg-gradient-to-r from-primary to-secondary;
-  }
+/* Acid green utilities */
+.text-acid { color: #c8ff00; }
+.bg-acid { background-color: #c8ff00; }
+.border-acid { border-color: #c8ff00; }
+
+/* Section label style */
+.section-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #c8ff00;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
-  .scrollbar-custom {
-    @apply scrollbar-thin scrollbar-track-transparent scrollbar-thumb-primary;
-  }
+/* Ghost / outlined text */
+.text-outline {
+  -webkit-text-stroke: 1px rgba(255,255,255,0.15);
+  color: transparent;
 }
 
-@keyframes float {
-  0% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-20px);
-  }
-  100% {
-    transform: translateY(0px);
-  }
+/* Progress bar */
+.skill-bar {
+  height: 1px;
+  background: rgba(255,255,255,0.1);
+  position: relative;
+}
+.skill-bar-fill {
+  height: 1px;
+  background: #c8ff00;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transition: width 1s ease;
 }
 
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
-  }
+/* Tag pill */
+.tag-pill {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border: 1px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.7);
 }
 
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* Hire me button */
+.btn-acid {
+  background: #c8ff00;
+  color: #0d0d0d;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 10px 20px;
+  transition: opacity 0.2s;
 }
+.btn-acid:hover { opacity: 0.85; }
 
-@keyframes gradient {
-  0%, 100% {
-    background-size: 200% 200%;
-    background-position: left center;
-  }
-  50% {
-    background-size: 200% 200%;
-    background-position: right center;
-  }
+.btn-ghost {
+  background: transparent;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 10px 20px;
+  border: 1px solid rgba(255,255,255,0.3);
+  transition: border-color 0.2s;
 }
+.btn-ghost:hover { border-color: white; }
 
-.animate-gradient {
-  animation: gradient 8s linear infinite;
+@layer base {
+  h1 { font-size: clamp(2rem, 8vw, 5rem); }
+  h2 { font-size: clamp(1.5rem, 4vw, 2.5rem); }
+  h3 { font-size: clamp(1.1rem, 2vw, 1.5rem); }
 }
-

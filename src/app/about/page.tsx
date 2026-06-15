@@ -58,234 +58,170 @@ export default function AboutPage() {
   const supabase = createClientComponentClient();
 
   useEffect(() => {
-    fetchProfile();
-    fetchExperiences();
-    fetchSkills();
-    fetchEducation();
+    Promise.all([fetchProfile(), fetchExperiences(), fetchSkills(), fetchEducation()]);
   }, []);
 
   const fetchProfile = async () => {
     try {
-      const { data, error } = await supabase
-        .from('profile')
-        .select('*')
-        .single();
-
+      const { data, error } = await supabase.from('profile').select('*').single();
       if (error) throw error;
       setProfile(data);
-    } catch (error: any) {
-      setError(error.message);
-    }
+    } catch (error: any) { setError(error.message); }
   };
 
   const fetchExperiences = async () => {
     try {
-      const { data, error } = await supabase
-        .from('experiences')
-        .select('*')
-        .order('order_index', { ascending: true });
-
+      const { data, error } = await supabase.from('experiences').select('*').order('order_index', { ascending: true });
       if (error) throw error;
       setExperiences(data || []);
-    } catch (error: any) {
-      setError(error.message);
-    }
+    } catch (error: any) { setError(error.message); }
   };
 
   const fetchSkills = async () => {
     try {
-      const { data, error } = await supabase
-        .from('skills')
-        .select('*')
-        .order('order_index', { ascending: true });
-
+      const { data, error } = await supabase.from('skills').select('*').order('order_index', { ascending: true });
       if (error) throw error;
       setSkills(data || []);
-    } catch (error: any) {
-      setError(error.message);
-    } finally {
-      setIsLoading(false);
-    }
+    } catch (error: any) { setError(error.message); }
+    finally { setIsLoading(false); }
   };
 
   const fetchEducation = async () => {
     try {
-      const { data, error } = await supabase
-        .from('education')
-        .select('*')
-        .order('order_index', { ascending: true });
-
+      const { data, error } = await supabase.from('education').select('*').order('order_index', { ascending: true });
       if (error) throw error;
       setEducation(data || []);
-    } catch (error: any) {
-      setError(error.message);
-    }
+    } catch (error: any) { setError(error.message); }
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#f5f3f0] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-black"></div>
-      </div>
-    );
-  }
+  if (isLoading) return (
+    <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center">
+      <div className="w-6 h-6 border border-[#c8ff00] border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-[#f5f3f0] flex items-center justify-center">
-        <div className="text-red-600">Error: {error}</div>
-      </div>
-    );
-  }
+  if (error) return (
+    <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center">
+      <p className="text-white/40 text-sm">Error: {error}</p>
+    </div>
+  );
 
   return (
-    <main className="min-h-screen relative">
-      <Image
-        src="/contact-page-bg.jpg"
-        alt="Contact Page Background"
-        fill
-        className="object-cover -z-10"
-        priority
-      />
+    <main className="min-h-screen bg-[#0d0d0d]">
       <Navigation />
-      
-      <div className="pt-24 pb-16">
-        <div className="max-w-6xl mx-auto px-4">
-          {/* Header */}
-          <div className="text-center mb-16">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">Who Am I</h1>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              {profile?.short_bio}
-            </p>
+
+      <div className="max-w-7xl mx-auto px-6 pt-28 pb-24 space-y-24">
+
+        {/* 02 / About */}
+        <section>
+          <div className="flex items-center gap-4 border-b border-white/10 pb-4 mb-16">
+            <span className="section-label text-[#c8ff00]">02 / About</span>
           </div>
+          <div className="grid md:grid-cols-2 gap-16 items-start">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+              <h1 className="text-5xl font-black text-white leading-tight mb-8">Building worlds, pixel by pixel.</h1>
+              <div className="space-y-4 text-white/40 text-sm leading-relaxed">
+                {profile?.bio?.split('\n').map((p, i) => <p key={i}>{p}</p>)}
+              </div>
+            </motion.div>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }} className="relative overflow-hidden" style={{ height: '420px' }}>
+              <Image src={profile?.image_url || '/profile.jpg'} alt="Eniola Olawale" fill className="object-cover" />
+            </motion.div>
+          </div>
+        </section>
 
-          {/* About Section */}
-          <section className="mb-20">
-            <div className="grid md:grid-cols-2 gap-12 items-center">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5 }}
-              >
-                <h2 className="text-3xl font-bold mb-6">Who I Am</h2>
-                <div className="prose prose-lg">
-                  {profile?.bio?.split('\n').map((paragraph, index) => (
-                    <p key={index} className="text-gray-600 mb-4">
-                      {paragraph}
-                    </p>
-                  ))}
-                </div>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5 }}
-                className="relative h-[400px] rounded-xl overflow-hidden"
-              >
-                <Image
-                  src={profile?.image_url || '/profile.jpg'}
-                  alt="Eniola Olawale"
-                  fill
-                  className="object-cover"
-                />
-              </motion.div>
+        {/* Experience */}
+        {experiences.length > 0 && (
+          <section>
+            <div className="flex items-center gap-4 border-b border-white/10 pb-4 mb-12">
+              <span className="section-label text-[#c8ff00]">Experience</span>
             </div>
-          </section>
-
-          {/* Experience Section */}
-          <section className="mb-20">
-            <h2 className="text-3xl font-bold mb-12 text-center">Experience</h2>
-            <div className="space-y-8">
+            <div className="space-y-px bg-white/5">
               {experiences.map((exp, index) => (
                 <motion.div
                   key={exp.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="bg-white rounded-xl p-6 shadow-lg"
+                  transition={{ duration: 0.4, delay: index * 0.07 }}
+                  className="bg-[#0d0d0d] p-8"
                 >
-                  <div className="flex justify-between items-start mb-4">
+                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2 mb-4">
                     <div>
-                      <h3 className="text-xl font-semibold">{exp.title}</h3>
-                      <p className="text-gray-600">{exp.company}</p>
+                      <h3 className="text-lg font-black text-white">{exp.title}</h3>
+                      <p className="text-[#c8ff00] text-sm font-semibold">{exp.company}</p>
                     </div>
-                    <span className="text-sm text-gray-500">{exp.period}</span>
+                    <span className="section-label text-white/30 shrink-0">{exp.period}</span>
                   </div>
-                  <p className="text-gray-600 mb-4">{exp.description}</p>
+                  <p className="text-white/40 text-sm leading-relaxed mb-5">{exp.description}</p>
                   <div className="flex flex-wrap gap-2">
-                    {exp.skills.map((skill, skillIndex) => (
-                      <span
-                        key={skillIndex}
-                        className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full"
-                      >
-                        {skill}
-                      </span>
-                    ))}
+                    {exp.skills.map((skill, i) => <span key={i} className="tag-pill">{skill}</span>)}
                   </div>
                 </motion.div>
               ))}
             </div>
           </section>
+        )}
 
-          {/* Skills Section */}
-          <section className="mb-20">
-            <h2 className="text-3xl font-bold mb-12 text-center">Skills</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        {/* Skills — 03 / Skills & Tools style */}
+        {skills.length > 0 && (
+          <section>
+            <div className="flex items-center gap-4 border-b border-white/10 pb-4 mb-12">
+              <span className="section-label text-[#c8ff00]">03 / Skills & Tools</span>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12">
               {skills.map((skillGroup, index) => (
                 <motion.div
                   key={skillGroup.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="bg-white rounded-xl p-6 shadow-lg"
+                  transition={{ duration: 0.4, delay: index * 0.07 }}
                 >
-                  <h3 className="text-xl font-semibold mb-4">{skillGroup.category}</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {skillGroup.items.map((skill, skillIndex) => (
-                      <span
-                        key={skillIndex}
-                        className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full"
-                      >
-                        {skill}
-                      </span>
+                  <h3 className="text-white font-black mb-6">{skillGroup.category}</h3>
+                  <div className="space-y-4">
+                    {skillGroup.items.map((item, i) => (
+                      <div key={i}>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="section-label text-[#c8ff00]">{item}</span>
+                        </div>
+                        <div className="skill-bar">
+                          <div className="skill-bar-fill" style={{ width: `${70 + Math.random() * 25}%` }} />
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </motion.div>
               ))}
             </div>
           </section>
+        )}
 
-          {/* Education Section */}
-          <section className="mb-20">
-            <h2 className="text-3xl font-bold mb-12 text-center">Education</h2>
-            <div className="space-y-8">
+        {/* Education */}
+        {education.length > 0 && (
+          <section>
+            <div className="flex items-center gap-4 border-b border-white/10 pb-4 mb-12">
+              <span className="section-label text-[#c8ff00]">Education</span>
+            </div>
+            <div className="space-y-px bg-white/5">
               {education.map((edu) => (
-                <motion.div
-                  key={edu.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-white rounded-xl p-6 shadow-lg"
-                >
-                  <div className="flex justify-between items-start">
+                <div key={edu.id} className="bg-[#0d0d0d] p-8">
+                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2 mb-2">
                     <div>
-                      <h3 className="text-xl font-semibold mb-2">{edu.institution}</h3>
-                      <p className="text-gray-600 mb-2">{edu.degree} in {edu.field_of_study}</p>
-                      <p className="text-gray-500 text-sm mb-4">
-                        {new Date(edu.start_date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} - {edu.end_date ? new Date(edu.end_date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Present'}
-                      </p>
-                      {edu.description && (
-                        <p className="text-gray-600">{edu.description}</p>
-                      )}
+                      <h3 className="text-lg font-black text-white">{edu.institution}</h3>
+                      <p className="text-white/50 text-sm">{edu.degree} in {edu.field_of_study}</p>
                     </div>
+                    <span className="section-label text-white/30 shrink-0">
+                      {new Date(edu.start_date).getFullYear()} – {edu.end_date ? new Date(edu.end_date).getFullYear() : 'Present'}
+                    </span>
                   </div>
-                </motion.div>
+                  {edu.description && <p className="text-white/40 text-sm leading-relaxed mt-4">{edu.description}</p>}
+                </div>
               ))}
             </div>
           </section>
-        </div>
+        )}
       </div>
 
       <ContactFooter />
     </main>
   );
-} 
+}

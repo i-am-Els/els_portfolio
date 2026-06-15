@@ -17,10 +17,7 @@ interface Project {
   created_at: string;
   project_categories?: {
     category_id: string;
-    categories?: {
-      id: string;
-      slug: string;
-    };
+    categories?: { id: string; slug: string; name?: string };
   }[];
   slug: string;
 }
@@ -48,20 +45,10 @@ export default function Portfolio() {
     try {
       const { data, error } = await supabase
         .from('projects')
-        .select(`
-          *,
-          project_categories (
-            category_id,
-            categories (
-              id,
-              slug
-            )
-          )
-        `)
+        .select(`*, project_categories(category_id, categories(id, slug))`)
         .eq('published', true)
         .order('created_at', { ascending: false })
-        .limit(3);
-
+        .limit(6);
       if (error) throw error;
       setProjects(data || []);
     } catch (error) {
@@ -77,7 +64,6 @@ export default function Portfolio() {
         .from('categories')
         .select('*')
         .order('order_index', { ascending: true });
-
       if (error) throw error;
       setCategories(data || []);
     } catch (error) {
@@ -85,167 +71,111 @@ export default function Portfolio() {
     }
   };
 
-  const filteredProjects = activeCategory === 'all' 
-    ? projects 
-    : projects.filter(project => 
-        project.project_categories?.some(pc => 
-          pc.categories?.slug === activeCategory
-        )
-      );
-
-  if (isLoading) {
-    return (
-      <section id="portfolio" className="relative w-full">
-        <div className="absolute inset-0 w-full h-full">
-          <div className="relative w-full h-full">
-            <Image
-              src="/portfolio-bg-3.jpg"
-              alt="Portfolio Background"
-              fill
-              className="object-cover object-center"
-              quality={100}
-              priority
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/50 to-background" />
-          </div>
-        </div>
-        <div className="relative container mx-auto px-4 py-16">
-          <div className="flex justify-center items-center min-h-[400px]">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-          </div>
-        </div>
-      </section>
-    );
-  }
+  const filteredProjects = activeCategory === 'all'
+    ? projects
+    : projects.filter(p => p.project_categories?.some(pc => pc.categories?.slug === activeCategory));
 
   return (
-    <section id="portfolio" className="relative w-full">
-      {/* Background Image Container */}
-      <div className="absolute inset-0 w-full h-full">
-        <div className="relative w-full h-full">
-          <Image
-            src="/portfolio-bg-3.jpg"
-            alt="Portfolio Background"
-            fill
-            className="object-cover object-center"
-            quality={100}
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/50 to-background" />
-        </div>
-      </div>
-
-      {/* Content Container */}
-      <div className="relative max-w-6xl mx-auto px-4 py-16">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4">Featured Projects</h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Explore my latest technical art and game development projects
-          </p>
+    <section id="portfolio" className="bg-[#0d0d0d]">
+      <div className="max-w-7xl mx-auto px-6 py-32">
+        {/* Section label */}
+        <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-16">
+          <span className="section-label text-[#c8ff00]">01 / Selected Work</span>
+          <span className="section-label text-white/30">{filteredProjects.length} Projects</span>
         </div>
 
-        {/* Category Filters */}
-        <div className="flex flex-wrap gap-2 mb-8">
+        {/* Category filters */}
+        <div className="flex flex-wrap gap-3 mb-12">
           <button
             onClick={() => setActiveCategory('all')}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              activeCategory === 'all'
-                ? 'bg-black text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
+            className={`tag-pill transition-colors ${activeCategory === 'all' ? 'border-[#c8ff00] text-[#c8ff00]' : 'hover:border-white/50 hover:text-white'}`}
           >
             All
           </button>
-          {categories.map((category) => (
+          {categories.map(cat => (
             <button
-              key={category.id}
-              onClick={() => setActiveCategory(category.slug)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                activeCategory === category.slug
-                  ? 'bg-black text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.slug)}
+              className={`tag-pill transition-colors ${activeCategory === cat.slug ? 'border-[#c8ff00] text-[#c8ff00]' : 'hover:border-white/50 hover:text-white'}`}
             >
-              {category.name}
+              {cat.name}
             </button>
           ))}
         </div>
 
-        {/* Projects Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <AnimatePresence>
-            {filteredProjects.length > 0 ? (
-              filteredProjects.map(project => (
-                <motion.div
-                  key={project.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.3 }}
-                  className="group relative bg-[#f5f3f0]/95 backdrop-blur-sm rounded-xl overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300"
-                >
-                  <Link href={`/portfolio/${project.slug}`} className="block">
-                    <div className="relative h-64 overflow-hidden">
-                      {project.image_url && (
-                        <Image
-                          src={project.image_url}
-                          alt={project.title}
-                          fill
-                          className="object-cover transition-transform duration-300 group-hover:scale-110"
-                        />
-                      )}
-                    </div>
-                    <div className="p-6">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm text-gray-500">
-                          {new Date(project.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors duration-300">{project.title}</h3>
-                      <p className="text-gray-600 mb-4">{project.description.length > 150? project.description.slice(0, 150) + '...' : project.description}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {project.technologies.map((tech, index) => (
-                          <span
-                            key={index}
-                            className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full"
-                          >
-                            {tech}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </Link>
-                </motion.div>
-              ))
-            ) : (
-              <div className="col-span-full flex items-center justify-center min-h-[400px]">
-                <p className="text-xl text-gray-600">Coming Soon</p>
-              </div>
-            )}
-          </AnimatePresence>
-        </div>
+        {/* Projects — full-bleed image cards */}
+        {isLoading ? (
+          <div className="flex justify-center py-32">
+            <div className="w-6 h-6 border border-[#c8ff00] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <AnimatePresence>
+              {filteredProjects.length > 0 ? (
+                filteredProjects.map((project, index) => {
+                  const categoryLabel = project.project_categories?.[0]?.categories?.slug?.replace(/-/g, ' ').toUpperCase() || 'PROJECT';
+                  return (
+                    <motion.div
+                      key={project.id}
+                      layout
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
+                    >
+                      <Link href={`/portfolio/${project.slug}`} className="group block relative overflow-hidden" style={{ height: '420px' }}>
+                        {/* Background image */}
+                        {project.image_url ? (
+                          <Image
+                            src={project.image_url}
+                            alt={project.title}
+                            fill
+                            className="object-cover transition-transform duration-700 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 bg-[#141414]" />
+                        )}
+                        {/* Dark overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/10" />
 
-        {/* View More Button */}
+                        {/* Arrow icon top right */}
+                        <div className="absolute top-4 right-4 w-9 h-9 border border-[#c8ff00] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <span className="text-[#c8ff00] text-sm">↗</span>
+                        </div>
+
+                        {/* Content bottom left */}
+                        <div className="absolute bottom-0 left-0 p-8">
+                          <span className="section-label text-[#c8ff00] block mb-2">{categoryLabel}</span>
+                          <h3 className="text-3xl font-black text-white mb-3">{project.title}</h3>
+                          <p className="text-white/50 text-sm max-w-lg mb-4 hidden group-hover:block">
+                            {project.description.slice(0, 120)}{project.description.length > 120 ? '...' : ''}
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {project.technologies.map((tech, i) => (
+                              <span key={i} className="tag-pill">{tech}</span>
+                            ))}
+                          </div>
+                        </div>
+                      </Link>
+                    </motion.div>
+                  );
+                })
+              ) : (
+                <div className="flex items-center justify-center h-64 border border-white/10">
+                  <p className="text-white/30 text-sm tracking-widest uppercase">Coming Soon</p>
+                </div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+
+        {/* View all */}
         {filteredProjects.length > 0 && (
-          <div className="text-center mt-12">
-            <Link
-              href="/portfolio"
-              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
-            >
+          <div className="mt-12">
+            <Link href="/portfolio" className="btn-ghost inline-flex items-center gap-3 text-xs">
               View All Projects
-              <svg
-                className="w-5 h-5 ml-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 8l4 4m0 0l-4 4m4-4H3"
-                />
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
             </Link>
           </div>
@@ -253,4 +183,4 @@ export default function Portfolio() {
       </div>
     </section>
   );
-} 
+}

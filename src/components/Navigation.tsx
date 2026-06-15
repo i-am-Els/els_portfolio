@@ -1,10 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import Image from 'next/image';
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -12,114 +10,78 @@ export default function Navigation() {
   const pathname = usePathname();
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-
+    const handleScroll = () => setIsScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const navLinks = [
-    { href: '/', label: 'Home' },
-    { href: '/portfolio', label: 'Portfolio' },
+    { href: '/portfolio', label: 'Work' },
+    { href: '/about', label: 'About' },
     { href: '/blog', label: 'Blog' },
-    { href: '/about', label: 'About Me' },
+    { href: '/#contact', label: 'Contact' },
   ];
 
   return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? 'bg-white/80 backdrop-blur-md shadow-lg' : 'bg-transparent'
-      }`}
-    >
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center">
-            <Image
-              src="/logo.png"
-              alt="Logo"
-              width={48}
-              height={48}
-              className="w-12 h-12"
-            />
-            <span className="text-xl font-bold text-gray-900">
-              Eniola Olawale
-            </span>
-          </Link>
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      isScrolled ? 'bg-[#0d0d0d]/95 backdrop-blur-md border-b border-white/5' : 'bg-transparent'
+    }`}>
+      <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
+        {/* Wordmark */}
+        <Link href="/" className="text-white font-black text-sm tracking-widest uppercase">
+          ENIOLA.O
+        </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex space-x-8">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`text-sm font-medium transition-colors duration-200 ${
-                  pathname === link.href
-                    ? 'text-primary'
-                    : 'text-gray-600 hover:text-primary'
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+        {/* Desktop Nav */}
+        <div className="hidden md:flex items-center gap-10">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`text-xs font-semibold tracking-widest uppercase transition-colors duration-200 ${
+                pathname === link.href ? 'text-[#c8ff00]' : 'text-white/60 hover:text-white'
+              }`}
             >
-              {isMobileMenuOpen ? (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              ) : (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              )}
-            </svg>
-          </button>
+              {link.label}
+            </Link>
+          ))}
+          <Link href="/#contact" className="btn-acid text-xs">
+            Hire Me
+          </Link>
         </div>
 
-        {/* Mobile Menu */}
-        <motion.div
-          initial={false}
-          animate={{ height: isMobileMenuOpen ? 'auto' : 0 }}
-          className="md:hidden overflow-hidden"
+        {/* Mobile toggle */}
+        <button
+          className="md:hidden text-white p-2"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         >
-          <div className="py-4 space-y-4">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`block text-sm font-medium transition-colors duration-200 ${
-                  pathname === link.href
-                    ? 'text-primary'
-                    : 'text-gray-600 hover:text-primary'
-                }`}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-        </motion.div>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {isMobileMenuOpen
+              ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            }
+          </svg>
+        </button>
       </div>
+
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden bg-[#0d0d0d] border-t border-white/5 px-6 py-6 space-y-6">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="block text-xs font-semibold tracking-widest uppercase text-white/60 hover:text-white transition-colors"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              {link.label}
+            </Link>
+          ))}
+          <Link href="/#contact" className="btn-acid inline-block text-xs" onClick={() => setIsMobileMenuOpen(false)}>
+            Hire Me
+          </Link>
+        </div>
+      )}
     </nav>
   );
-} 
+}

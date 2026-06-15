@@ -21,10 +21,7 @@ interface Project {
   order_index: number;
   project_categories?: {
     category_id: string;
-    categories?: {
-      id: string;
-      slug: string;
-    };
+    categories?: { id: string; slug: string };
   }[];
 }
 
@@ -57,20 +54,10 @@ export default function PortfolioPage() {
     try {
       const { data, error } = await supabase
         .from('projects')
-        .select(`
-          *,
-          project_categories (
-            category_id,
-            categories (
-              id,
-              slug
-            )
-          )
-        `)
+        .select(`*, project_categories(category_id, categories(id, slug))`)
         .eq('published', true)
         .order('order_index', { ascending: true })
         .order('created_at', { ascending: false });
-
       if (error) throw error;
       setProjects(data || []);
     } catch (error: any) {
@@ -82,11 +69,7 @@ export default function PortfolioPage() {
 
   const fetchCategories = async () => {
     try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('order_index', { ascending: true });
-
+      const { data, error } = await supabase.from('categories').select('*').order('order_index', { ascending: true });
       if (error) throw error;
       setCategories(data || []);
     } catch (error: any) {
@@ -94,20 +77,13 @@ export default function PortfolioPage() {
     }
   };
 
-  const filteredProjects = activeCategory === 'all' 
-    ? projects 
-    : projects.filter(project => 
-        project.project_categories?.some(pc => 
-          pc.categories?.slug === activeCategory
-        )
-      );
+  const filteredProjects = activeCategory === 'all'
+    ? projects
+    : projects.filter(p => p.project_categories?.some(pc => pc.categories?.slug === activeCategory));
 
-  // Calculate pagination
   const totalPages = Math.ceil(filteredProjects.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedProjects = filteredProjects.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const paginatedProjects = filteredProjects.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-  // Reset to first page when category changes
   const handleCategoryChange = (category: string) => {
     setActiveCategory(category);
     setCurrentPage(1);
@@ -115,162 +91,130 @@ export default function PortfolioPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#f5f3f0]">
-        <Navigation />
-        <div className="pt-24 flex justify-center items-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-        </div>
+      <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center">
+        <div className="w-6 h-6 border border-[#c8ff00] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#f5f3f0]">
-        <Navigation />
-        <div className="pt-24 text-center">
-          <h2 className="text-2xl font-bold text-gray-900">Error loading projects</h2>
-          <p className="text-gray-600 mt-2">{error}</p>
-        </div>
+      <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center">
+        <p className="text-white/40 text-sm">Error: {error}</p>
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#f5f3f0]">
+    <main className="min-h-screen bg-[#0d0d0d]">
       <Navigation />
-      
-      <div className="pt-24 pb-16">
-        <div className="max-w-6xl mx-auto px-4">
-          {/* Header */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">Portfolio</h1>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Explore my collection of game development and technical art projects
-            </p>
-          </div>
 
-          {/* Category Filters */}
-          <div className="flex flex-wrap justify-center gap-4 mb-12">
+      <div className="max-w-7xl mx-auto px-6 pt-28 pb-24">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-12">
+          <span className="section-label text-[#c8ff00]">01 / Selected Work</span>
+          <span className="section-label text-white/30">{filteredProjects.length} Projects</span>
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-wrap gap-3 mb-12">
+          <button
+            onClick={() => handleCategoryChange('all')}
+            className={`tag-pill transition-colors ${activeCategory === 'all' ? 'border-[#c8ff00] text-[#c8ff00]' : 'hover:border-white/50 hover:text-white'}`}
+          >
+            All
+          </button>
+          {categories.map(cat => (
             <button
-              onClick={() => handleCategoryChange('all')}
-              className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                activeCategory === 'all'
-                  ? 'bg-black text-white'
-                  : 'bg-white text-gray-600 hover:bg-gray-100'
-              }`}
+              key={cat.id}
+              onClick={() => handleCategoryChange(cat.slug)}
+              className={`tag-pill transition-colors ${activeCategory === cat.slug ? 'border-[#c8ff00] text-[#c8ff00]' : 'hover:border-white/50 hover:text-white'}`}
             >
-              All
+              {cat.name}
             </button>
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => handleCategoryChange(category.slug)}
-                className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                  activeCategory === category.slug
-                    ? 'bg-black text-white'
-                    : 'bg-white text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                {category.name}
-              </button>
-            ))}
-          </div>
+          ))}
+        </div>
 
-          {/* Projects Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <AnimatePresence>
-              {paginatedProjects.length > 0 ? (
-                paginatedProjects.map(project => (
+        {/* Grid — 2 col with full-bleed images */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-white/5">
+          <AnimatePresence>
+            {paginatedProjects.length > 0 ? (
+              paginatedProjects.map((project, index) => {
+                const categoryLabel = project.project_categories?.[0]?.categories?.slug?.replace(/-/g, ' ').toUpperCase() || 'PROJECT';
+                return (
                   <motion.div
                     key={project.id}
                     layout
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.3 }}
-                    className="group relative bg-[#f5f3f0]/95 backdrop-blur-sm rounded-xl overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.04 }}
+                    className="bg-[#0d0d0d]"
                   >
-                    <Link href={`/portfolio/${project.slug}`} className="block">
-                      <div className="relative h-64 overflow-hidden">
-                        {project.image_url && (
-                          <Image
-                            src={project.image_url}
-                            alt={project.title}
-                            fill
-                            className="object-cover transition-transform duration-300 group-hover:scale-110"
-                          />
-                        )}
+                    <Link href={`/portfolio/${project.slug}`} className="group block relative overflow-hidden" style={{ height: '380px' }}>
+                      {project.image_url ? (
+                        <Image src={project.image_url} alt={project.title} fill className="object-cover transition-transform duration-700 group-hover:scale-105" />
+                      ) : (
+                        <div className="absolute inset-0 bg-[#141414]" />
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+
+                      <div className="absolute top-4 right-4 w-9 h-9 border border-[#c8ff00] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-[#c8ff00] text-sm">↗</span>
                       </div>
-                      <div className="p-6">
-                        <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors duration-300">{project.title}</h3>
-                        <p className="text-gray-600 mb-4">{project.description.length > 150? project.description.slice(0, 150) + '...' : project.description}</p>
+
+                      <div className="absolute bottom-0 left-0 p-6">
+                        <span className="section-label text-[#c8ff00] block mb-1">{categoryLabel}</span>
+                        <h3 className="text-2xl font-black text-white mb-3">{project.title}</h3>
                         <div className="flex flex-wrap gap-2">
-                          {project.technologies.map((tech, index) => (
-                            <span
-                              key={index}
-                              className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full"
-                            >
-                              {tech}
-                            </span>
+                          {project.technologies.map((tech, i) => (
+                            <span key={i} className="tag-pill">{tech}</span>
                           ))}
                         </div>
                       </div>
                     </Link>
                   </motion.div>
-                ))
-              ) : (
-                <div className="col-span-full flex items-center justify-center min-h-[400px]">
-                  <p className="text-xl text-gray-600">Coming Soon</p>
-                </div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center gap-2 mt-8">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  currentPage === 1
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                Previous
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    currentPage === page
-                      ? 'bg-black text-white'
-                      : 'bg-white text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  currentPage === totalPages
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                Next
-              </button>
-            </div>
-          )}
+                );
+              })
+            ) : (
+              <div className="col-span-full flex items-center justify-center h-64">
+                <p className="text-white/30 text-sm tracking-widest uppercase">Coming Soon</p>
+              </div>
+            )}
+          </AnimatePresence>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex justify-center gap-2 mt-12">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+              disabled={currentPage === 1}
+              className={`tag-pill transition-colors ${currentPage === 1 ? 'opacity-30 cursor-not-allowed' : 'hover:border-white/50 hover:text-white'}`}
+            >
+              ← Prev
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`tag-pill transition-colors ${currentPage === page ? 'border-[#c8ff00] text-[#c8ff00]' : 'hover:border-white/50 hover:text-white'}`}
+              >
+                {page}
+              </button>
+            ))}
+            <button
+              onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className={`tag-pill transition-colors ${currentPage === totalPages ? 'opacity-30 cursor-not-allowed' : 'hover:border-white/50 hover:text-white'}`}
+            >
+              Next →
+            </button>
+          </div>
+        )}
       </div>
 
       <ContactFooter />
     </main>
   );
-} 
+}

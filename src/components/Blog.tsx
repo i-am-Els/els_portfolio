@@ -20,10 +20,7 @@ interface BlogPost {
   updated_at: string;
   blog_post_categories?: {
     category_id: string;
-    categories?: {
-      id: string;
-      slug: string;
-    };
+    categories?: { id: string; slug: string };
   }[];
 }
 
@@ -39,7 +36,6 @@ export default function Blog() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -51,20 +47,10 @@ export default function Blog() {
     try {
       const { data, error } = await supabase
         .from('blog_posts')
-        .select(`
-          *,
-          blog_post_categories (
-            category_id,
-            categories (
-              id,
-              slug
-            )
-          )
-        `)
+        .select(`*, blog_post_categories(category_id, categories(id, slug))`)
         .eq('published', true)
         .order('created_at', { ascending: false })
         .limit(3);
-
       if (error) throw error;
       setPosts(data || []);
     } catch (error) {
@@ -76,174 +62,114 @@ export default function Blog() {
 
   const fetchCategories = async () => {
     try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('order_index', { ascending: true });
-
+      const { data, error } = await supabase.from('categories').select('*').order('order_index', { ascending: true });
       if (error) throw error;
       setCategories(data || []);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching categories:', error);
     }
   };
 
   const getImageUrl = (path: string) => {
     if (!path) return '';
-    // If the path is already an absolute URL, return it as is
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
-    }
-    // Otherwise, construct the absolute URL
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
     return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${path}`;
   };
 
-  const filteredPosts = activeCategory === 'all' 
-    ? posts 
-    : posts.filter(post => 
-        post.blog_post_categories?.some(bpc => 
-          bpc.categories?.slug === activeCategory
-        )
-      );
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-black"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-red-600 text-center p-4">
-        Error: {error}
-      </div>
-    );
-  }
+  const filteredPosts = activeCategory === 'all'
+    ? posts
+    : posts.filter(p => p.blog_post_categories?.some(bpc => bpc.categories?.slug === activeCategory));
 
   return (
-    <section id="blog" className="py-16 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/blog-bg.jpg')" }}>
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4">Latest Blog Posts</h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Insights and tutorials on game development and technical art
-          </p>
+    <section id="blog" className="bg-[#0d0d0d] py-32">
+      <div className="max-w-7xl mx-auto px-6">
+        {/* Section label */}
+        <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-16">
+          <span className="section-label text-[#c8ff00]">05 / Writing</span>
+          <Link href="/blog" className="section-label text-white/30 hover:text-white transition-colors">View All →</Link>
         </div>
 
-        {/* Category Filters */}
-        <div className="flex flex-wrap gap-2 mb-8">
+        {/* Category filters */}
+        <div className="flex flex-wrap gap-3 mb-12">
           <button
             onClick={() => setActiveCategory('all')}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              activeCategory === 'all'
-                ? 'bg-black text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
+            className={`tag-pill transition-colors ${activeCategory === 'all' ? 'border-[#c8ff00] text-[#c8ff00]' : 'hover:border-white/50 hover:text-white'}`}
           >
             All
           </button>
-          {categories.map((category) => (
+          {categories.map(cat => (
             <button
-              key={category.id}
-              onClick={() => setActiveCategory(category.slug)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                activeCategory === category.slug
-                  ? 'bg-black text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.slug)}
+              className={`tag-pill transition-colors ${activeCategory === cat.slug ? 'border-[#c8ff00] text-[#c8ff00]' : 'hover:border-white/50 hover:text-white'}`}
             >
-              {category.name}
+              {cat.name}
             </button>
           ))}
         </div>
 
-        {/* Blog Posts Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          <AnimatePresence>
-            {filteredPosts.length > 0 ? (
-              filteredPosts.map(post => (
-                <motion.div
-                  key={post.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.3 }}
-                  className="group relative bg-[#f5f3f0]/95 backdrop-blur-sm rounded-xl overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300"
-                >
-                  <Link href={`/blog/${post.slug}`} className="block">
-                    <div className="relative h-64 overflow-hidden">
-                      {post.image_url && (
-                        <Image
-                          src={getImageUrl(post.image_url)}
-                          alt={post.title}
-                          fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
-                      )}
-                    </div>
-                    <div className="p-6">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm text-gray-500">
-                          {new Date(post.created_at).toLocaleDateString()}
-                        </span>
-                        <span className="text-sm text-gray-500">{post.read_time} min read</span>
+        {isLoading ? (
+          <div className="flex justify-center py-32">
+            <div className="w-6 h-6 border border-[#c8ff00] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-white/5">
+            <AnimatePresence>
+              {filteredPosts.length > 0 ? (
+                filteredPosts.map((post, index) => (
+                  <motion.div
+                    key={post.id}
+                    layout
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                    className="bg-[#0d0d0d] group"
+                  >
+                    <Link href={`/blog/${post.slug}`} className="block">
+                      <div className="relative h-52 overflow-hidden">
+                        {post.image_url ? (
+                          <Image
+                            src={getImageUrl(post.image_url)}
+                            alt={post.title}
+                            fill
+                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 bg-[#141414]" />
+                        )}
                       </div>
-                      <h3 className="text-2xl font-bold mb-3 text-gray-900 group-hover:text-primary transition-colors duration-300">
-                        {post.title}
-                      </h3>
-                      <p className="text-gray-700 mb-4 leading-relaxed">
-                        {post.excerpt}
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {post.tags.map(tag => (
-                          <span
-                            key={tag}
-                            className="px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full border border-primary/20 hover:bg-primary/20 transition-colors duration-300"
-                          >
-                            {tag}
+                      <div className="p-6 border-t border-white/5">
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="section-label text-white/30">
+                            {new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                           </span>
-                        ))}
+                          <span className="section-label text-white/30">{post.read_time} min</span>
+                        </div>
+                        <h3 className="text-lg font-black text-white mb-2 group-hover:text-[#c8ff00] transition-colors leading-snug">
+                          {post.title}
+                        </h3>
+                        <p className="text-white/40 text-sm leading-relaxed mb-4">
+                          {post.excerpt}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {post.tags.map(tag => (
+                            <span key={tag} className="tag-pill">{tag}</span>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  </Link>
-                </motion.div>
-              ))
-            ) : (
-              <div className="col-span-full flex items-center justify-center min-h-[400px]">
-                <p className="text-xl text-gray-600">Coming Soon</p>
-              </div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* View All Button */}
-        {filteredPosts.length > 0 && (
-          <div className="text-center">
-            <a
-              href="/blog"
-              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
-            >
-              View All Posts
-              <svg
-                className="w-5 h-5 ml-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 8l4 4m0 0l-4 4m4-4H3"
-                />
-              </svg>
-            </a>
+                    </Link>
+                  </motion.div>
+                ))
+              ) : (
+                <div className="col-span-full flex items-center justify-center h-64">
+                  <p className="text-white/30 text-sm tracking-widest uppercase">Coming Soon</p>
+                </div>
+              )}
+            </AnimatePresence>
           </div>
         )}
       </div>
     </section>
   );
-} 
+}

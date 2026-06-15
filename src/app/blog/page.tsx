@@ -24,10 +24,7 @@ interface BlogPost {
   updated_at: string;
   blog_post_categories?: {
     category_id: string;
-    categories?: {
-      id: string;
-      slug: string;
-    };
+    categories?: { id: string; slug: string };
   }[];
 }
 
@@ -56,19 +53,9 @@ export default function BlogPage() {
     try {
       const { data, error } = await supabase
         .from('blog_posts')
-        .select(`
-          *,
-          blog_post_categories (
-            category_id,
-            categories (
-              id,
-              slug
-            )
-          )
-        `)
+        .select(`*, blog_post_categories(category_id, categories(id, slug))`)
         .eq('published', true)
         .order('created_at', { ascending: false });
-
       if (error) throw error;
       setPosts(data || []);
     } catch (error: any) {
@@ -80,11 +67,7 @@ export default function BlogPage() {
 
   const fetchCategories = async () => {
     try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('order_index', { ascending: true });
-
+      const { data, error } = await supabase.from('categories').select('*').order('order_index', { ascending: true });
       if (error) throw error;
       setCategories(data || []);
     } catch (error: any) {
@@ -94,28 +77,17 @@ export default function BlogPage() {
 
   const getImageUrl = (path: string) => {
     if (!path) return '';
-    // If the path is already an absolute URL, return it as is
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
-    }
-    // Otherwise, construct the absolute URL
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
     return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${path}`;
   };
 
-  const filteredPosts = activeCategory === 'all' 
-    ? posts 
-    : posts.filter(post => 
-        post.blog_post_categories?.some(bpc => 
-          bpc.categories?.slug === activeCategory
-        )
-      );
+  const filteredPosts = activeCategory === 'all'
+    ? posts
+    : posts.filter(p => p.blog_post_categories?.some(bpc => bpc.categories?.slug === activeCategory));
 
-  // Calculate pagination
   const totalPages = Math.ceil(filteredPosts.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedPosts = filteredPosts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const paginatedPosts = filteredPosts.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-  // Reset to first page when category changes
   const handleCategoryChange = (category: string) => {
     setActiveCategory(category);
     setCurrentPage(1);
@@ -123,161 +95,113 @@ export default function BlogPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#f5f3f0] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-black"></div>
+      <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center">
+        <div className="w-6 h-6 border border-[#c8ff00] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#f5f3f0] flex items-center justify-center">
-        <div className="text-red-600">Error: {error}</div>
+      <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center">
+        <p className="text-white/40 text-sm">Error: {error}</p>
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#f5f3f0]">
+    <main className="min-h-screen bg-[#0d0d0d]">
       <Navigation />
-      
-      <div className="pt-24 pb-16">
-        <div className="max-w-6xl mx-auto px-4">
-          {/* Header */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">Blog</h1>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Insights and tutorials on game development and technical art
-            </p>
-          </div>
 
-          {/* Category Filters */}
-          <div className="flex flex-wrap justify-center gap-4 mb-12">
-            <button
-              onClick={() => handleCategoryChange('all')}
-              className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                activeCategory === 'all'
-                  ? 'bg-black text-white'
-                  : 'bg-white text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              All
-            </button>
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => handleCategoryChange(category.slug)}
-                className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                  activeCategory === category.slug
-                    ? 'bg-black text-white'
-                    : 'bg-white text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                {category.name}
-              </button>
-            ))}
-          </div>
-
-          {/* Blog Posts Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <AnimatePresence>
-              {paginatedPosts.length > 0 ? (
-                paginatedPosts.map(post => (
-                  <motion.div
-                    key={post.id}
-                    layout
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.3 }}
-                    className="group relative bg-[#f5f3f0]/95 backdrop-blur-sm rounded-xl overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300"
-                  >
-                    <Link href={`/blog/${post.slug}`} className="block">
-                      <div className="relative h-64 overflow-hidden">
-                        {post.image_url && (
-                          <Image
-                            src={getImageUrl(post.image_url)}
-                            alt={post.title}
-                            fill
-                            className="object-cover transition-transform duration-300 group-hover:scale-110"
-                          />
-                        )}
-                      </div>
-                      <div className="p-6">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm text-gray-500">
-                            {new Date(post.created_at).toLocaleDateString()}
-                          </span>
-                          <span className="text-sm text-gray-500">{post.read_time} min read</span>
-                        </div>
-                        <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors duration-300">{post.title}</h3>
-                        <p className="text-gray-600 mb-4">{post.excerpt}</p>
-                        <div className="flex flex-wrap gap-2">
-                          {post.tags.map((tag, index) => (
-                            <span
-                              key={index}
-                              className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </Link>
-                  </motion.div>
-                ))
-              ) : (
-                <div className="col-span-full flex items-center justify-center min-h-[400px]">
-                  <p className="text-xl text-gray-600">Coming Soon</p>
-                </div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center gap-2 mt-8">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  currentPage === 1
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                Previous
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    currentPage === page
-                      ? 'bg-black text-white'
-                      : 'bg-white text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  currentPage === totalPages
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                Next
-              </button>
-            </div>
-          )}
+      <div className="max-w-7xl mx-auto px-6 pt-28 pb-24">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-12">
+          <span className="section-label text-[#c8ff00]">05 / Writing</span>
+          <span className="section-label text-white/30">{filteredPosts.length} Posts</span>
         </div>
+
+        {/* Filters */}
+        <div className="flex flex-wrap gap-3 mb-12">
+          <button
+            onClick={() => handleCategoryChange('all')}
+            className={`tag-pill transition-colors ${activeCategory === 'all' ? 'border-[#c8ff00] text-[#c8ff00]' : 'hover:border-white/50 hover:text-white'}`}
+          >
+            All
+          </button>
+          {categories.map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => handleCategoryChange(cat.slug)}
+              className={`tag-pill transition-colors ${activeCategory === cat.slug ? 'border-[#c8ff00] text-[#c8ff00]' : 'hover:border-white/50 hover:text-white'}`}
+            >
+              {cat.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Posts grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-white/5">
+          <AnimatePresence>
+            {paginatedPosts.length > 0 ? (
+              paginatedPosts.map((post, index) => (
+                <motion.div
+                  key={post.id}
+                  layout
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.04 }}
+                  className="bg-[#0d0d0d] group"
+                >
+                  <Link href={`/blog/${post.slug}`} className="block">
+                    <div className="relative h-52 overflow-hidden">
+                      {post.image_url ? (
+                        <Image src={getImageUrl(post.image_url)} alt={post.title} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
+                      ) : (
+                        <div className="absolute inset-0 bg-[#141414]" />
+                      )}
+                    </div>
+                    <div className="p-6 border-t border-white/5">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="section-label text-white/30">
+                          {new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </span>
+                        <span className="section-label text-white/30">{post.read_time} min</span>
+                      </div>
+                      <h3 className="text-lg font-black text-white mb-2 group-hover:text-[#c8ff00] transition-colors leading-snug">
+                        {post.title}
+                      </h3>
+                      <p className="text-white/40 text-sm leading-relaxed mb-4">{post.excerpt}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {post.tags.map(tag => (
+                          <span key={tag} className="tag-pill">{tag}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))
+            ) : (
+              <div className="col-span-full flex items-center justify-center h-64">
+                <p className="text-white/30 text-sm tracking-widest uppercase">Coming Soon</p>
+              </div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex justify-center gap-2 mt-12">
+            <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1} className={`tag-pill transition-colors ${currentPage === 1 ? 'opacity-30 cursor-not-allowed' : 'hover:border-white/50 hover:text-white'}`}>← Prev</button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              <button key={page} onClick={() => setCurrentPage(page)} className={`tag-pill transition-colors ${currentPage === page ? 'border-[#c8ff00] text-[#c8ff00]' : 'hover:border-white/50 hover:text-white'}`}>{page}</button>
+            ))}
+            <button onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages} className={`tag-pill transition-colors ${currentPage === totalPages ? 'opacity-30 cursor-not-allowed' : 'hover:border-white/50 hover:text-white'}`}>Next →</button>
+          </div>
+        )}
       </div>
 
       <ContactFooter />
     </main>
   );
-} 
+}

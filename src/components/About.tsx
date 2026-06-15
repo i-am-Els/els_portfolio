@@ -1,61 +1,75 @@
 "use client";
 
 import { motion } from 'framer-motion';
-import { CodeBracketIcon, PaintBrushIcon, CubeIcon, CommandLineIcon } from '@heroicons/react/24/outline';
 import { aboutContent } from '@/data/about';
 
-// Define the icon types
-const iconTypes = ['code-bracket', 'paint-brush', 'cube', 'command-line'] as const;
-type IconType = typeof iconTypes[number];
-
-type IconMap = {
-  [K in IconType]: typeof CodeBracketIcon;
-};
-
-const iconMap: IconMap = {
-  'code-bracket': CodeBracketIcon,
-  'paint-brush': PaintBrushIcon,
-  'cube': CubeIcon,
-  'command-line': CommandLineIcon
-};
+const defaultStats = [
+  { value: '5+', label: 'Years of Experience' },
+  { value: '12', label: 'Shipped Titles' },
+  { value: '8', label: 'Game Jam Wins' },
+  { value: '3', label: 'Engines Mastered' },
+];
 
 export default function About() {
   return (
-    <section id="about" className="py-24 relative w-full">
-      <div className="max-w-6xl mx-auto px-4 relative z-10">
+    <section id="about" className="py-32 bg-[#0d0d0d]">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="flex items-center gap-4 mb-16 border-b border-white/10 pb-4">
+          <span className="section-label text-[#c8ff00]">02 / About</span>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-16 items-start">
+          {/* Left: Headline + bio */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <h2 className="text-5xl md:text-6xl font-black text-white leading-tight mb-8">
+              Building worlds, pixel by pixel.
+            </h2>
+            <p className="text-white/40 text-sm leading-relaxed">
+              {aboutContent.summary}
+            </p>
+
+            <div className="flex flex-wrap gap-3 mt-10">
+              <a href="/about" className="btn-ghost text-xs">Full Bio →</a>
+            </div>
+          </motion.div>
+
+          {/* Right: Stats grid */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.15 }}
+            className="grid grid-cols-2 divide-x divide-y divide-white/10 border border-white/10"
+          >
+            {defaultStats.map((stat, i) => (
+              <div key={i} className="p-8">
+                <div className="text-5xl font-black text-[#c8ff00] mb-2">{stat.value}</div>
+                <div className="section-label text-white/40">{stat.label}</div>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+
+        {/* Skills */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          transition={{ duration: 0.6, delay: 0.25 }}
+          className="mt-24 grid md:grid-cols-2 lg:grid-cols-4 gap-8"
         >
-          <h2 className="text-5xl md:text-6xl font-extrabold mb-4 text-gray-900 tracking-tight">
-            About Me
-          </h2>
-          <p className="text-xl text-gray-700 max-w-3xl mx-auto font-medium">
-            {aboutContent.summary}
-          </p>
+          {aboutContent.skills.map((skill) => (
+            <div key={skill.title} className="border-t border-white/10 pt-6">
+              <h3 className="text-white font-bold mb-4">{skill.title}</h3>
+              <p className="text-white/40 text-sm leading-relaxed">{skill.description}</p>
+            </div>
+          ))}
         </motion.div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {aboutContent.skills.map((skill, index) => {
-            const Icon = iconMap[skill.icon];
-            return (
-              <motion.div
-                key={skill.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="bg-card/50 backdrop-blur-sm p-6 rounded-lg border border-border hover:border-primary/50 transition-colors"
-              >
-                <Icon className="w-12 h-12 text-primary mb-4" />
-                <h3 className="text-xl font-semibold mb-2 text-foreground">{skill.title}</h3>
-                <p className="text-foreground/70">{skill.description}</p>
-              </motion.div>
-            );
-          })}
-        </div>
       </div>
     </section>
   );
