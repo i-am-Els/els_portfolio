@@ -84,7 +84,7 @@ export default function ContactFooter() {
       {/* Contact section */}
       <div className="max-w-7xl mx-auto px-6 py-24">
         <div className="flex items-center gap-4 border-b border-white/10 pb-4 mb-16">
-          <span className="section-label text-[#c8ff00]">04 / Contact</span>
+          <span className="section-label text-[#c8ff00]"> Contact</span>
         </div>
 
         <div className="grid md:grid-cols-2 gap-16">

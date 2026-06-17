@@ -663,7 +663,7 @@ Then find the `<div className="mt-12">` block (near the bottom of the component)
 
 - [ ] **Step 6.4: Verify in browser**
 
-Reload http://localhost:3000 and scroll to "01 / Selected Work":
+Reload http://localhost:3000 and scroll to " Selected Work":
 - First project renders at full 420px height
 - Remaining projects appear in a 2-column grid below at 220px
 - Each card staggered in as you scroll into view
@@ -701,14 +701,14 @@ import { clipReveal, fadeUp, staggerContainer, lineGrow } from '@/lib/motion';
 Find the section header `<div>` (currently a plain div with `border-b`):
 ```tsx
 <div className="flex items-center gap-4 mb-16 border-b border-white/10 pb-4">
-  <span className="section-label text-[#c8ff00]">02 / About</span>
+  <span className="section-label text-[#c8ff00]"> About</span>
 </div>
 ```
 
 Replace with:
 ```tsx
 <div className="flex items-center gap-4 mb-16 pb-4 relative">
-  <span className="section-label text-[#c8ff00]">02 / About</span>
+  <span className="section-label text-[#c8ff00]"> About</span>
   <motion.div
     className="absolute bottom-0 left-0 right-0 h-px bg-white/10"
     variants={lineGrow}
@@ -824,7 +824,7 @@ import { staggerContainer, fadeUp, lineGrow } from '@/lib/motion';
 Find the section header div:
 ```tsx
 <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-16">
-  <span className="section-label text-[#c8ff00]">05 / Writing</span>
+  <span className="section-label text-[#c8ff00]"> Writing</span>
   <Link href="/blog" className="section-label text-white/30 hover:text-white transition-colors">View All →</Link>
 </div>
 ```
@@ -832,7 +832,7 @@ Find the section header div:
 Replace with:
 ```tsx
 <div className="flex items-center justify-between pb-4 mb-16 relative">
-  <span className="section-label text-[#c8ff00]">05 / Writing</span>
+  <span className="section-label text-[#c8ff00]"> Writing</span>
   <Link href="/blog" className="section-label text-white/30 hover:text-white transition-colors">View All →</Link>
   <motion.div
     className="absolute bottom-0 left-0 right-0 h-px bg-white/10"

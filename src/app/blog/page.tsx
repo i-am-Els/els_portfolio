@@ -116,7 +116,7 @@ export default function BlogPage() {
       <div className="max-w-7xl mx-auto px-6 pt-28 pb-24">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-12">
-          <span className="section-label text-[#c8ff00]">05 / Writing</span>
+          <span className="section-label text-[#c8ff00]"> Writing</span>
           <span className="section-label text-white/30">{filteredPosts.length} Posts</span>
         </div>
 

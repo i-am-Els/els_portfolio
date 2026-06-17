@@ -5,9 +5,9 @@ import { clipReveal, fadeUp, staggerContainer, lineGrow } from '@/lib/motion';
 import { aboutContent } from '@/data/about';
 
 const defaultStats = [
-  { value: '5+', label: 'Years of Experience' },
-  { value: '12', label: 'Shipped Titles' },
-  { value: '8', label: 'Game Jam Wins' },
+  { value: '3+', label: 'Years of Experience' },
+  { value: '4+', label: 'Mastered DCC Tools' },
+  { value: '3+', label: 'Industrial Standard Projects' },
   { value: '3', label: 'Engines Mastered' },
 ];
 
@@ -16,7 +16,7 @@ export default function About() {
     <section id="about" className="py-32 bg-[#0d0d0d]">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center gap-4 mb-16 pb-4 relative">
-          <span className="section-label text-[#c8ff00]">02 / About</span>
+          <span className="section-label text-[#c8ff00]"> About</span>
           <motion.div
             className="absolute bottom-0 left-0 right-0 h-px bg-white/10"
             variants={lineGrow}

@@ -112,10 +112,10 @@ export default function AboutPage() {
 
       <div className="max-w-7xl mx-auto px-6 pt-28 pb-24 space-y-24">
 
-        {/* 02 / About */}
+        {/* About */}
         <section>
           <div className="flex items-center gap-4 border-b border-white/10 pb-4 mb-16">
-            <span className="section-label text-[#c8ff00]">02 / About</span>
+            <span className="section-label text-[#c8ff00]"> About</span>
           </div>
           <div className="grid md:grid-cols-2 gap-16 items-start">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
@@ -162,11 +162,11 @@ export default function AboutPage() {
           </section>
         )}
 
-        {/* Skills — 03 / Skills & Tools style */}
+        {/* Skills — Skills & Tools style */}
         {skills.length > 0 && (
           <section>
             <div className="flex items-center gap-4 border-b border-white/10 pb-4 mb-12">
-              <span className="section-label text-[#c8ff00]">03 / Skills & Tools</span>
+              <span className="section-label text-[#c8ff00]"> Skills & Tools</span>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12">
               {skills.map((skillGroup, index) => (

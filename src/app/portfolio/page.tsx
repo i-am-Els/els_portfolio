@@ -112,7 +112,7 @@ export default function PortfolioPage() {
       <div className="max-w-7xl mx-auto px-6 pt-28 pb-24">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-12">
-          <span className="section-label text-[#c8ff00]">01 / Selected Work</span>
+          <span className="section-label text-[#c8ff00]"> Selected Work</span>
           <span className="section-label text-white/30">{filteredProjects.length} Projects</span>
         </div>
 
