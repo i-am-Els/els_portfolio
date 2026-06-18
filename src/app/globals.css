@@ -50,10 +50,11 @@
 
   body {
     @apply bg-[#0d0d0d] text-white;
-    font-family: 'Inter', 'Helvetica Neue', sans-serif;
+    font-family: var(--font-body), 'Helvetica Neue', sans-serif;
   }
 
   h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display), var(--font-body), sans-serif;
     @apply font-black tracking-tight;
   }
 }
@@ -65,6 +66,7 @@
 
 /* Section label style */
 .section-label {
+  font-family: var(--font-mono), monospace;
   font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.2em;
