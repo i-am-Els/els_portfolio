@@ -83,26 +83,28 @@ export default function ProjectPage({ params }: { params: { slug: string } }) {
             priority
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d0d] via-black/30 to-transparent" />
-          <div className="absolute bottom-0 left-0 w-full max-w-7xl mx-auto px-6 pb-12">
+          <div className="absolute bottom-0 left-0 right-0 pb-12">
+            <div className="max-w-7xl mx-auto px-6">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
               <span className="section-label text-[#c8ff00] block mb-3">{categoryLabel}</span>
               <h1 className="text-5xl md:text-7xl font-black text-white leading-none">{project.title}</h1>
             </motion.div>
+            </div>
           </div>
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-6 py-16">
+      <div className="max-w-7xl mx-auto px-6 pt-12 pb-24">
         {/* Back */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="mb-12">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="mb-16">
           <Link href="/portfolio" className="section-label text-white/30 hover:text-[#c8ff00] transition-colors inline-flex items-center gap-2">
             ← Back to Work
           </Link>
         </motion.div>
 
-        {/* Title block if no hero image */}
+        {/* Title block — only shown when no hero image */}
         {!project.image_url && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-16">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-16 pb-12 border-b border-white/10">
             <span className="section-label text-[#c8ff00] block mb-3">{categoryLabel}</span>
             <h1 className="text-5xl md:text-7xl font-black text-white leading-none">{project.title}</h1>
           </motion.div>

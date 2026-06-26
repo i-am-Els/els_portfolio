@@ -139,8 +139,8 @@ export default function BlogPage() {
           ))}
         </div>
 
-        {/* Posts grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-white/5">
+        {/* Posts grid — 2 columns, consistent with portfolio grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-white/5">
           <AnimatePresence>
             {paginatedPosts.length > 0 ? (
               paginatedPosts.map((post, index) => (
@@ -154,7 +154,7 @@ export default function BlogPage() {
                   className="bg-[#0d0d0d] group"
                 >
                   <Link href={`/blog/${post.slug}`} className="block">
-                    <div className="relative h-52 overflow-hidden">
+                    <div className="relative h-72 overflow-hidden">
                       {post.image_url ? (
                         <Image src={getImageUrl(post.image_url)} alt={post.title} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
                       ) : (
