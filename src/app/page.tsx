@@ -101,7 +101,7 @@ export default function Home() {
 />
 
         {/* Vertical label right */}
-        <div className="absolute top-28 right-6 md:right-12 font-condensed text-xs tracking-[0.3em] text-white/40 rotate-90 origin-right">
+        <div className="absolute right-6 top-28 md:right-12 font-condensed text-xs tracking-[0.3em] text-white/40 rotate-90 origin-right">
           <span className="section-label text-white/20 [writing-mode:vertical-rl] tracking-widest">3D ARTIST & STORYTELLER</span>
           <div className="w-px h-16 bg-white/10" />
         </div>
