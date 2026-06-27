@@ -106,6 +106,12 @@
   color: rgba(255,255,255,0.7);
 }
 
+.tag-pill-active {
+  border-color: #c8ff00;
+  color: #c8ff00;
+  background-color: rgba(200, 255, 0, 0.08);
+}
+
 /* Hire me button */
 .btn-acid {
   background: #c8ff00;

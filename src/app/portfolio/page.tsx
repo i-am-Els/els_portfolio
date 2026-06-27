@@ -120,7 +120,7 @@ export default function PortfolioPage() {
         <div className="flex flex-wrap gap-3 mb-12">
           <button
             onClick={() => handleCategoryChange('all')}
-            className={`tag-pill transition-colors ${activeCategory === 'all' ? 'border-[#c8ff00] text-[#c8ff00]' : 'hover:border-white/50 hover:text-white'}`}
+            className={`tag-pill transition-colors ${activeCategory === 'all' ? 'tag-pill-active' : 'hover:border-white/50 hover:text-white'}`}
           >
             All
           </button>
@@ -128,7 +128,7 @@ export default function PortfolioPage() {
             <button
               key={cat.id}
               onClick={() => handleCategoryChange(cat.slug)}
-              className={`tag-pill transition-colors ${activeCategory === cat.slug ? 'border-[#c8ff00] text-[#c8ff00]' : 'hover:border-white/50 hover:text-white'}`}
+              className={`tag-pill transition-colors ${activeCategory === cat.slug ? 'tag-pill-active' : 'hover:border-white/50 hover:text-white'}`}
             >
               {cat.name}
             </button>
@@ -198,7 +198,7 @@ export default function PortfolioPage() {
               <button
                 key={page}
                 onClick={() => setCurrentPage(page)}
-                className={`tag-pill transition-colors ${currentPage === page ? 'border-[#c8ff00] text-[#c8ff00]' : 'hover:border-white/50 hover:text-white'}`}
+                className={`tag-pill transition-colors ${currentPage === page ? 'tag-pill-active' : 'hover:border-white/50 hover:text-white'}`}
               >
                 {page}
               </button>

@@ -124,7 +124,7 @@ export default function BlogPage() {
         <div className="flex flex-wrap gap-3 mb-12">
           <button
             onClick={() => handleCategoryChange('all')}
-            className={`tag-pill transition-colors ${activeCategory === 'all' ? 'border-[#c8ff00] text-[#c8ff00]' : 'hover:border-white/50 hover:text-white'}`}
+            className={`tag-pill transition-colors ${activeCategory === 'all' ? 'tag-pill-active' : 'hover:border-white/50 hover:text-white'}`}
           >
             All
           </button>
@@ -132,7 +132,7 @@ export default function BlogPage() {
             <button
               key={cat.id}
               onClick={() => handleCategoryChange(cat.slug)}
-              className={`tag-pill transition-colors ${activeCategory === cat.slug ? 'border-[#c8ff00] text-[#c8ff00]' : 'hover:border-white/50 hover:text-white'}`}
+              className={`tag-pill transition-colors ${activeCategory === cat.slug ? 'tag-pill-active' : 'hover:border-white/50 hover:text-white'}`}
             >
               {cat.name}
             </button>
@@ -194,7 +194,7 @@ export default function BlogPage() {
           <div className="flex justify-center gap-2 mt-12">
             <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1} className={`tag-pill transition-colors ${currentPage === 1 ? 'opacity-30 cursor-not-allowed' : 'hover:border-white/50 hover:text-white'}`}>← Prev</button>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-              <button key={page} onClick={() => setCurrentPage(page)} className={`tag-pill transition-colors ${currentPage === page ? 'border-[#c8ff00] text-[#c8ff00]' : 'hover:border-white/50 hover:text-white'}`}>{page}</button>
+              <button key={page} onClick={() => setCurrentPage(page)} className={`tag-pill transition-colors ${currentPage === page ? 'tag-pill-active' : 'hover:border-white/50 hover:text-white'}`}>{page}</button>
             ))}
             <button onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages} className={`tag-pill transition-colors ${currentPage === totalPages ? 'opacity-30 cursor-not-allowed' : 'hover:border-white/50 hover:text-white'}`}>Next →</button>
           </div>
