@@ -155,7 +155,7 @@ export default function Portfolio() {
 
         {/* Section header */}
         <div className="flex items-center justify-between pb-4 mb-16 relative">
-          <span className="section-label text-[#c8ff00]">01 / Selected Work</span>
+          <span className="section-label text-[#c8ff00]">Selected Work</span>
           <span className="section-label text-white/30">{filteredProjects.length} Projects</span>
           <motion.div
             className="absolute bottom-0 left-0 right-0 h-px bg-white/10"

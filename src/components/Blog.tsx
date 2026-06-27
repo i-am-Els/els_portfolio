@@ -64,7 +64,7 @@ export default function Blog() {
 
         {/* Section label — same pattern as Portfolio */}
         <div className="flex items-center justify-between pb-4 mb-16 relative">
-          <span className="section-label text-[#c8ff00]">05 / Latest Writing</span>
+          <span className="section-label text-[#c8ff00]">Latest Writing</span>
           <motion.div
             className="absolute bottom-0 left-0 right-0 h-px bg-white/10"
             variants={lineGrow}
