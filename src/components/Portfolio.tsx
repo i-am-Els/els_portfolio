@@ -190,26 +190,26 @@ export default function Portfolio() {
             <div className="w-6 h-6 border border-[#c8ff00] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-60px' }}
-            className="space-y-0"
-          >
-            <AnimatePresence>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeCategory}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.25 }}
+              className="space-y-0"
+            >
               {filteredProjects.length > 0 ? (
                 <>
                   {/* Hero card — full width */}
                   {heroProject && <HeroCard project={heroProject} />}
 
-                  {/* Remaining — 2-column rows, each card taller */}
+                  {/* Remaining — 2-column rows */}
                   {gridRows.map((row, rowIdx) => (
                     <div key={rowIdx} className="grid grid-cols-2 gap-0">
                       {row.map(project => (
                         <GridCard key={project.id} project={project} />
                       ))}
-                      {/* Filler if odd number in row */}
                       {row.length === 1 && <div className="bg-[#0d0d0d]" />}
                     </div>
                   ))}
@@ -219,8 +219,8 @@ export default function Portfolio() {
                   <p className="text-white/30 text-sm tracking-widest uppercase">Coming Soon</p>
                 </div>
               )}
-            </AnimatePresence>
-          </motion.div>
+            </motion.div>
+          </AnimatePresence>
         )}
 
         {/* View All Projects */}

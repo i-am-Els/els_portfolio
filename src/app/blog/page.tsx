@@ -140,19 +140,18 @@ export default function BlogPage() {
         </div>
 
         {/* Posts grid — 2 columns, no gaps */}
-        <div className="grid grid-cols-1 md:grid-cols-2">
-          <AnimatePresence>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeCategory + currentPage}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25 }}
+            className="grid grid-cols-1 md:grid-cols-2"
+          >
             {paginatedPosts.length > 0 ? (
               paginatedPosts.map((post, index) => (
-                <motion.div
-                  key={post.id}
-                  layout
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.04 }}
-                  className="bg-[#0d0d0d] group"
-                >
+                <div key={post.id} className="bg-[#0d0d0d] group">
                   <Link href={`/blog/${post.slug}`} className="block">
                     <div className="relative h-72 overflow-hidden">
                       {post.image_url ? (
@@ -179,15 +178,15 @@ export default function BlogPage() {
                       </div>
                     </div>
                   </Link>
-                </motion.div>
+                </div>
               ))
             ) : (
               <div className="col-span-full flex items-center justify-center h-64">
                 <p className="text-white/30 text-sm tracking-widest uppercase">Coming Soon</p>
               </div>
             )}
-          </AnimatePresence>
-        </div>
+          </motion.div>
+        </AnimatePresence>
 
         {/* Pagination */}
         {totalPages > 1 && (
