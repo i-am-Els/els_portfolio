@@ -34,17 +34,16 @@ export default function About() {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <div className="overflow-hidden mb-8">
-              <motion.h2
-                variants={clipReveal}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true }}
-                className="text-5xl md:text-6xl font-black text-white leading-tight"
-              >
-                Building worlds, pixel by pixel.
-              </motion.h2>
-            </div>
+            <motion.h2
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              className="font-display leading-[0.9] tracking-tight text-white mb-8"
+              style={{ fontSize: 'clamp(2.5rem, 5vw, 4.5rem)', fontWeight: 900 }}
+            >
+              Building worlds, pixel by pixel.
+            </motion.h2>
             <p className="text-white/40 text-sm leading-relaxed">
               {aboutContent.summary}
             </p>
