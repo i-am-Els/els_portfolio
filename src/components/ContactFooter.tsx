@@ -98,18 +98,16 @@ export default function ContactFooter() {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <div className="overflow-hidden mb-6">
-              <motion.h2
-                variants={clipReveal}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true }}
-                className="font-display leading-[0.9] tracking-tight text-white"
-                style={{ fontSize: 'clamp(2.8rem, 6vw, 5.5rem)', fontWeight: 900 }}
-              >
-                Let's build something great.
-              </motion.h2>
-            </div>
+            <motion.h2
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              className="font-display leading-[0.9] tracking-tight text-white mb-6"
+              style={{ fontSize: 'clamp(2.8rem, 6vw, 5.5rem)', fontWeight: 900 }}
+            >
+              Let's build something great.
+            </motion.h2>
             <p className="text-white/40 text-sm leading-relaxed mb-8 max-w-sm">
               Open to full-time roles, contract work, and collaborative projects in the games industry. I respond to all serious inquiries within 48 hours.
             </p>
