@@ -105,7 +105,7 @@ export default function Blog() {
 
               {/* Arrow */}
               <div className="absolute top-6 right-6 w-9 h-9 border border-[#c8ff00] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <span className="text-[#c8ff00] text-sm">↗</span>
+                <svg className="w-4 h-4 text-[#c8ff00]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M7 7h10v10" /></svg>
               </div>
 
               {/* Content */}

@@ -49,7 +49,7 @@ function HeroCard({ project }: { project: Project }) {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/5" />
         <div className="absolute top-6 right-6 w-9 h-9 border border-[#c8ff00] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-          <span className="text-[#c8ff00] text-sm">↗</span>
+          <svg className="w-4 h-4 text-[#c8ff00]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M7 7h10v10" /></svg>
         </div>
         <div className="absolute bottom-0 left-0 p-10">
           <span className="section-label text-[#c8ff00] block mb-2">{label}</span>
@@ -83,7 +83,7 @@ function GridCard({ project }: { project: Project }) {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/5" />
         <div className="absolute top-4 right-4 w-8 h-8 border border-[#c8ff00] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-          <span className="text-[#c8ff00] text-xs">↗</span>
+          <svg className="w-3 h-3 text-[#c8ff00]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M7 7h10v10" /></svg>
         </div>
         <div className="absolute bottom-0 left-0 p-7">
           <span className="section-label text-[#c8ff00] block mb-1">{label}</span>
