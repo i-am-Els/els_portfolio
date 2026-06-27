@@ -139,8 +139,8 @@ export default function BlogPage() {
           ))}
         </div>
 
-        {/* Posts grid — 2 columns, consistent with portfolio grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-white/5">
+        {/* Posts grid — 2 columns, no gaps */}
+        <div className="grid grid-cols-1 md:grid-cols-2">
           <AnimatePresence>
             {paginatedPosts.length > 0 ? (
               paginatedPosts.map((post, index) => (
@@ -161,7 +161,7 @@ export default function BlogPage() {
                         <div className="absolute inset-0 bg-[#141414]" />
                       )}
                     </div>
-                    <div className="p-6 border-t border-white/5">
+                    <div className="p-6">
                       <div className="flex justify-between items-center mb-3">
                         <span className="section-label text-white/30">
                           {new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}

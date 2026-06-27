@@ -68,9 +68,7 @@ export default function ContactFooter() {
       </svg>
     )},
     { url: profile?.artstation_url, label: 'ArtStation', icon: (
-      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M0 17.723l2.027 3.505h.001a2.424 2.424 0 0 0 2.164 1.333h13.457l-2.792-4.838H0zm24 .025c0-.484-.143-.935-.388-1.314L15.728 2.728a2.424 2.424 0 0 0-2.164-1.333H6.369l14.34 24.728 2.836-4.906A2.41 2.41 0 0 0 24 17.748zm-11.209-6.251l-3.019-5.224-7.315 12.648h6.038l4.296-7.424z"/>
-      </svg>
+      <img src="/artstation-svgrepo-com.svg" alt="ArtStation" className="w-4 h-4 invert opacity-50 group-hover:opacity-100" />
     )},
     { url: profile?.linkedin_url, label: 'LinkedIn', icon: (
       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -151,7 +149,7 @@ export default function ContactFooter() {
                   target="_blank"
                   rel="noopener noreferrer"
                   variants={fadeIn}
-                  className="w-10 h-10 border border-white/15 flex items-center justify-center text-white/50 hover:border-[#c8ff00] hover:text-[#c8ff00] transition-colors"
+                  className="group w-10 h-10 border border-white/15 flex items-center justify-center text-white/50 hover:border-[#c8ff00] hover:text-[#c8ff00] transition-colors"
                   aria-label={s.label}
                 >
                   {s.icon}

@@ -195,7 +195,7 @@ export default function Portfolio() {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: '-60px' }}
-            className="space-y-3"
+            className="space-y-0"
           >
             <AnimatePresence>
               {filteredProjects.length > 0 ? (
@@ -205,7 +205,7 @@ export default function Portfolio() {
 
                   {/* Remaining — 2-column rows, each card taller */}
                   {gridRows.map((row, rowIdx) => (
-                    <div key={rowIdx} className="grid grid-cols-2 gap-3">
+                    <div key={rowIdx} className="grid grid-cols-2 gap-0">
                       {row.map(project => (
                         <GridCard key={project.id} project={project} />
                       ))}
