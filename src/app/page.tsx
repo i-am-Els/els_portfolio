@@ -90,7 +90,7 @@ export default function Home() {
       {/* Hero */}
       <section className="relative min-h-screen flex flex-col justify-end pb-20 overflow-hidden">
         {/* Particle canvas */}
-        <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" />
+        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
         <div
   className="absolute inset-0 pointer-events-none opacity-[0.03]"
   style={{
