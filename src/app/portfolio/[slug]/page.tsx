@@ -161,13 +161,15 @@ export default function ProjectPage({ params }: { params: { slug: string } }) {
                 {project.project_url && (
                   <a href={project.project_url} target="_blank" rel="noopener noreferrer"
                     className="btn-acid flex items-center justify-center gap-2 text-xs w-full">
-                    View Live Project ↗
+                    View Project Breakdown <svg className="w-3 h-3 text-[#c8ff00]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M7 7h10v10" /></svg>
+
                   </a>
                 )}
                 {project.github_url && (
                   <a href={project.github_url} target="_blank" rel="noopener noreferrer"
                     className="btn-ghost flex items-center justify-center gap-2 text-xs w-full">
-                    View on GitHub ↗
+                    View on GitHub <svg className="w-3 h-3 text-[#c8ff00]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M7 7h10v10" /></svg>
+
                   </a>
                 )}
               </div>
