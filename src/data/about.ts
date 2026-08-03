@@ -16,8 +16,8 @@ export const aboutContent = {
     },
     {
       icon: "code-bracket",
-      title: "Gameplay Systems (C++ / UE5)",
-      description: "Building core mechanics, input, shader and material logic and interaction logic in engine."
+      title: "Game Engine Integrations (Unity / Unreal Engine)",
+      description: "Building optimised assets, textures and resources that integrate well into game engine pipelines."
     },
     {
       icon: "paint-brush",
@@ -27,7 +27,7 @@ export const aboutContent = {
     {
       icon: "command-line",
       title: "Procedural System",
-      description: "Designing dynamic, reusable setups for modelling and layout tasks."
+      description: "Designing dynamic, reusable setups for modelling and layout tasks using art and programming tools alike."
     }
   ]
 } as const;
