@@ -169,7 +169,7 @@ export default function Home() {
               className="flex flex-col md:flex-row items-start md:items-end justify-between gap-8"
             >
               <p className="text-white/40 text-sm leading-relaxed max-w-xs">
-                Crafting immersive worlds and interactive experiences — from core gameplay systems to hand-sculpted characters. Based in Nigeria, open to global opportunities.
+                Crafting immersive worlds and interactive experiences — from interactive systems to properly designed characters and environments. Based in Nigeria, open to global opportunities.
               </p>
               <div className="flex gap-3">
                 <a href="#portfolio" className="btn-acid text-xs">View Work</a>
