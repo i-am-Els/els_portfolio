@@ -130,3 +130,91 @@ body::after {
   color: #c8ff00;
   font-family: var(--font-mono), monospace;
 }
+
+
+/* ─── Dark-theme overrides for legacy Tailwind classes ─────────────────────
+   These force the white/gray page content into the dark design system
+   without needing to rewrite every individual admin page file.           */
+
+/* Backgrounds */
+.bg-white, .bg-gray-50 { background-color: #141414 !important; }
+.bg-gray-100 { background-color: #1a1a1a !important; }
+.bg-gray-200 { background-color: #222 !important; }
+.bg-gray-800 { background-color: #141414 !important; }
+.bg-gray-900 { background-color: #0d0d0d !important; }
+.bg-blue-600 { background-color: #c8ff00 !important; }
+.bg-blue-700 { background-color: #aadd00 !important; }
+.bg-black    { background-color: #c8ff00 !important; }
+.bg-red-600  { background-color: transparent !important; }
+
+/* Text */
+.text-gray-900 { color: rgba(255,255,255,0.9) !important; }
+.text-gray-800 { color: rgba(255,255,255,0.8) !important; }
+.text-gray-700 { color: rgba(255,255,255,0.7) !important; }
+.text-gray-600 { color: rgba(255,255,255,0.5) !important; }
+.text-gray-500 { color: rgba(255,255,255,0.4) !important; }
+.text-gray-400 { color: rgba(255,255,255,0.3) !important; }
+.text-gray-300 { color: rgba(255,255,255,0.25) !important; }
+.text-black    { color: #0d0d0d !important; }
+.text-blue-600 { color: #c8ff00 !important; }
+.text-white    { color: #ffffff !important; }
+/* Keep red visible for danger/delete */
+.text-red-600  { color: rgb(239,68,68) !important; }
+.bg-red-600 button, button.bg-red-600 {
+  background-color: transparent !important;
+  border: 1px solid rgba(239,68,68,0.4) !important;
+  color: rgb(239,68,68) !important;
+}
+
+/* Borders */
+.border-gray-100 { border-color: rgba(255,255,255,0.06) !important; }
+.border-gray-200 { border-color: rgba(255,255,255,0.08) !important; }
+.border-gray-300 { border-color: rgba(255,255,255,0.12) !important; }
+.border-gray-600 { border-color: rgba(255,255,255,0.12) !important; }
+.border-gray-700 { border-color: rgba(255,255,255,0.08) !important; }
+.border-black    { border-color: rgba(255,255,255,0.2) !important; }
+.divide-gray-200 > * + * { border-color: rgba(255,255,255,0.06) !important; }
+.divide-gray-700 > * + * { border-color: rgba(255,255,255,0.06) !important; }
+
+/* Shadows — kill them, we use borders instead */
+.shadow-sm, .shadow, .shadow-md, .shadow-lg { box-shadow: none !important; }
+
+/* Rounded — flatten to match the sharp design language */
+.rounded-lg, .rounded-md, .rounded { border-radius: 0 !important; }
+.rounded-full { border-radius: 9999px !important; } /* keep pills/avatars round */
+
+/* Inputs */
+input, textarea, select {
+  background-color: #1a1a1a !important;
+  border-color: rgba(255,255,255,0.1) !important;
+  color: #fff !important;
+}
+input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.2) !important; }
+input:focus, textarea:focus, select:focus {
+  border-color: #c8ff00 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  ring: none !important;
+}
+
+/* Buttons — New Post / New Project etc. */
+.bg-black.text-white, a.bg-black, button.bg-black {
+  background-color: #c8ff00 !important;
+  color: #0d0d0d !important;
+  border-color: transparent !important;
+}
+.hover\:bg-gray-800:hover { background-color: #aadd00 !important; }
+.hover\:bg-gray-200:hover { background-color: #222 !important; }
+.hover\:bg-gray-100:hover { background-color: #1a1a1a !important; }
+
+/* Badge / pill — Draft, Published etc. */
+.bg-yellow-100 { background-color: rgba(200,255,0,0.1) !important; }
+.text-yellow-800 { color: #c8ff00 !important; }
+.bg-green-100 { background-color: rgba(34,197,94,0.1) !important; }
+.text-green-800 { color: rgb(34,197,94) !important; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #0d0d0d; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+::-webkit-scrollbar-thumb:hover { background: #c8ff00; }
