@@ -9,51 +9,43 @@ import { UserCircleIcon } from '@heroicons/react/24/outline';
 import type { Database } from '@/types/supabase';
 import { Session } from '@supabase/supabase-js';
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+const navLinks = [
+  { href: '/admin', label: 'Dashboard', exact: true },
+  { href: '/admin/projects', label: 'Projects', exact: false },
+  { href: '/admin/blog', label: 'Blog', exact: false },
+  { href: '/admin/categories', label: 'Categories', exact: false },
+  { href: '/admin/profile', label: 'Profile', exact: false },
+];
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const router = useRouter();
   const rawPathname = usePathname();
   const pathname = rawPathname ?? '';
-  const supabase = createClientComponentClient();
+  const supabase = createClientComponentClient<Database>();
 
   useEffect(() => {
     const checkSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        
         if (!session) {
-          if (pathname !== '/admin/login') {
-            router.push('/admin/login');
-          }
+          if (pathname !== '/admin/login') router.push('/admin/login');
           return;
         }
-
         setUserEmail(session.user.email || null);
-
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-          if (!session) {
-            router.push('/admin/login');
-          } else {
-            setUserEmail(session.user.email || null);
-          }
+          if (!session) router.push('/admin/login');
+          else setUserEmail(session.user.email || null);
         });
-
-        return () => {
-          subscription.unsubscribe();
-        };
-      } catch (error) {
-        console.error('Error checking session:', error);
+        return () => subscription.unsubscribe();
+      } catch {
         router.push('/admin/login');
       } finally {
         setIsLoading(false);
       }
     };
-
     checkSession();
   }, [supabase, router, pathname]);
 
@@ -66,103 +58,118 @@ export default function AdminLayout({
     }
   };
 
+  const isActive = (href: string, exact: boolean) =>
+    exact ? pathname === href : pathname.startsWith(href);
+
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center">
         <div className="loading-spinner" />
       </div>
     );
   }
 
-  if (pathname === '/admin/login') {
-    return <>{children}</>;
-  }
+  if (pathname === '/admin/login') return <>{children}</>;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <nav className="bg-white dark:bg-gray-800 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex">
-              <div className="flex-shrink-0 flex items-center">
-                <Link href="/admin" className="text-xl font-bold text-gray-900 dark:text-white">
-                  Portfolio Admin
-                </Link>
-              </div>
-              <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                <Link
-                  href="/admin"
-                  className={`flex items-center px-4 py-2 text-sm ${
-                    pathname === '/admin'
-                      ? 'text-black font-semibold border-b-2 border-black'
-                      : 'text-gray-500 hover:text-gray-900 font-medium'
-                  }`}
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  href="/admin/projects"
-                  className={`flex items-center px-4 py-2 text-sm ${
-                    pathname.startsWith('/admin/projects')
-                      ? 'text-black font-semibold border-b-2 border-black'
-                      : 'text-gray-500 hover:text-gray-900 font-medium'
-                  }`}
-                >
-                  Projects
-                </Link>
-                <Link
-                  href="/admin/categories"
-                  className={`flex items-center px-4 py-2 text-sm ${
-                    pathname.startsWith('/admin/categories')
-                      ? 'text-black font-semibold border-b-2 border-black'
-                      : 'text-gray-500 hover:text-gray-900 font-medium'
-                  }`}
-                >
-                  Categories
-                </Link>
-                <Link
-                  href="/admin/blog"
-                  className={`flex items-center px-4 py-2 text-sm ${
-                    pathname.startsWith('/admin/blog')
-                      ? 'text-black font-semibold border-b-2 border-black'
-                      : 'text-gray-500 hover:text-gray-900 font-medium'
-                  }`}
-                >
-                  Blog
-                </Link>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center">
-                <Link
-                  href="/admin/profile"
-                  className="flex items-center hover:opacity-80 transition-opacity group relative"
-                >
-                  <UserCircleIcon className="h-7 w-7 text-gray-500 dark:text-gray-400 mr-2" />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
-                    {userEmail}
-                  </span>
-                  <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    Profile Settings
-                  </div>
-                </Link>
-              </div>
-              <button
-                onClick={handleSignOut}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-600 transition-all duration-200 ml-4"
+    <div className="min-h-screen bg-[#0d0d0d]">
+      {/* Top nav */}
+      <nav className="fixed top-0 left-0 right-0 z-40 bg-[#0d0d0d]/95 backdrop-blur-md border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
+          {/* Wordmark */}
+          <Link href="/admin" className="text-white font-black text-xs tracking-widest uppercase">
+            ENIOLA.O <span className="text-[#c8ff00]">/ ADMIN</span>
+          </Link>
+
+          {/* Desktop nav links */}
+          <div className="hidden md:flex items-center gap-1">
+            {navLinks.map(link => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`px-3 py-1.5 text-xs font-semibold tracking-widest uppercase transition-colors duration-200 ${
+                  isActive(link.href, link.exact)
+                    ? 'text-[#c8ff00] border-b border-[#c8ff00]'
+                    : 'text-white/40 hover:text-white'
+                }`}
+                style={{ fontFamily: 'var(--font-mono), monospace' }}
               >
-                Sign Out
-              </button>
-            </div>
+                {link.label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Right side */}
+          <div className="flex items-center gap-4">
+            <span className="hidden md:block text-xs text-white/30" style={{ fontFamily: 'var(--font-mono)' }}>
+              {userEmail}
+            </span>
+            <button
+              onClick={handleSignOut}
+              className="text-xs font-semibold tracking-widest uppercase px-3 py-1.5 border border-red-500/40 text-red-400 hover:bg-red-500/10 transition-colors"
+              style={{ fontFamily: 'var(--font-mono), monospace' }}
+            >
+              Sign Out
+            </button>
+            {/* Mobile toggle */}
+            <button
+              className="md:hidden text-white/50 hover:text-white"
+              onClick={() => setMobileOpen(!mobileOpen)}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {mobileOpen
+                  ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                }
+              </svg>
+            </button>
           </div>
         </div>
+
+        {/* Mobile menu */}
+        {mobileOpen && (
+          <div className="md:hidden border-t border-white/5 px-6 py-4 space-y-3 bg-[#0d0d0d]">
+            {navLinks.map(link => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+                className={`block text-xs font-semibold tracking-widest uppercase transition-colors ${
+                  isActive(link.href, link.exact) ? 'text-[#c8ff00]' : 'text-white/40 hover:text-white'
+                }`}
+                style={{ fontFamily: 'var(--font-mono), monospace' }}
+              >
+                {link.label}
+              </Link>
+            ))}
+            <p className="text-xs text-white/20 pt-2 border-t border-white/5" style={{ fontFamily: 'var(--font-mono)' }}>
+              {userEmail}
+            </p>
+          </div>
+        )}
       </nav>
 
+      {/* View public site link */}
+      <div className="fixed bottom-6 right-6 z-40">
+        <Link
+          href="/"
+          target="_blank"
+          className="flex items-center gap-2 text-xs font-semibold tracking-widest uppercase px-3 py-2 border border-white/10 text-white/30 hover:border-[#c8ff00] hover:text-[#c8ff00] transition-colors bg-[#0d0d0d]"
+          style={{ fontFamily: 'var(--font-mono), monospace' }}
+        >
+          View Site
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M7 7h10v10" />
+          </svg>
+        </Link>
+      </div>
+
+      {/* Page content */}
       <motion.main
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+        className="max-w-7xl mx-auto px-6 pt-24 pb-16"
       >
         {children}
       </motion.main>

@@ -3,73 +3,130 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-rgb: 255, 255, 255;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-rgb: 0, 0, 0;
-  }
+  --background: #0d0d0d;
+  --foreground: #ffffff;
+  --accent: #c8ff00;
+  --muted: rgba(255,255,255,0.4);
+  --border: rgba(255,255,255,0.1);
+  --surface: #141414;
+  --surface-2: #1a1a1a;
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-rgb));
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body), 'Helvetica Neue', sans-serif;
+  cursor: none;
 }
 
-/* Admin-specific styles */
-.admin-content {
-  @apply p-8;
+/* Custom lime cursor */
+*, *::before, *::after {
+  cursor: none !important;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  width: 12px;
+  height: 12px;
+  background: #c8ff00;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 99999;
+  transform: translate(-50%, -50%);
+  transition: transform 0.1s ease;
 }
 
 /* Loading spinner */
 .loading-spinner {
-  @apply animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white;
+  @apply animate-spin rounded-full h-8 w-8;
+  border: 2px solid rgba(200,255,0,0.2);
+  border-top-color: #c8ff00;
 }
 
 /* Card styles */
 .admin-card {
-  @apply bg-white dark:bg-gray-800 rounded-lg shadow-md p-6;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 1.5rem;
 }
 
 /* Button styles */
 .admin-button {
-  @apply px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors;
+  @apply px-4 py-2 text-sm font-semibold tracking-widest uppercase transition-all duration-200;
+  background: #c8ff00;
+  color: #0d0d0d;
 }
+.admin-button:hover { opacity: 0.85; }
 
 .admin-button-secondary {
-  @apply px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors;
+  @apply px-4 py-2 text-sm font-semibold tracking-widest uppercase transition-all duration-200;
+  border: 1px solid var(--border);
+  color: rgba(255,255,255,0.6);
+  background: transparent;
 }
+.admin-button-secondary:hover {
+  border-color: rgba(255,255,255,0.4);
+  color: #fff;
+}
+
+.admin-button-danger {
+  @apply px-4 py-2 text-sm font-semibold tracking-widest uppercase transition-all duration-200;
+  border: 1px solid rgba(239,68,68,0.4);
+  color: rgb(239,68,68);
+  background: transparent;
+}
+.admin-button-danger:hover { background: rgba(239,68,68,0.1); }
 
 /* Form styles */
 .admin-input {
-  @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white;
+  @apply w-full px-3 py-2 text-sm transition-colors duration-200 focus:outline-none;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: #fff;
 }
+.admin-input::placeholder { color: rgba(255,255,255,0.2); }
+.admin-input:focus { border-color: #c8ff00; }
 
 .admin-label {
-  @apply block text-sm font-medium text-gray-700;
+  @apply block text-xs font-semibold tracking-widest uppercase mb-2;
+  color: rgba(255,255,255,0.4);
+  font-family: var(--font-mono), monospace;
 }
 
 /* Table styles */
 .admin-table {
-  @apply min-w-full divide-y divide-gray-200 dark:divide-gray-700;
+  @apply w-full;
+  border-collapse: collapse;
 }
-
 .admin-table th {
-  @apply px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider;
+  @apply px-4 py-3 text-left text-xs font-semibold tracking-widest uppercase;
+  color: rgba(255,255,255,0.3);
+  font-family: var(--font-mono), monospace;
+  border-bottom: 1px solid var(--border);
 }
-
 .admin-table td {
-  @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100;
+  @apply px-4 py-4 text-sm;
+  color: rgba(255,255,255,0.7);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
 }
+.admin-table tr:hover td { background: rgba(255,255,255,0.02); }
 
-/* Navigation styles */
+/* Nav link styles */
 .admin-nav-link {
-  @apply flex items-center px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors;
+  @apply flex items-center px-3 py-2 text-xs font-semibold tracking-widest uppercase transition-colors duration-200;
+  color: rgba(255,255,255,0.4);
+  font-family: var(--font-mono), monospace;
+}
+.admin-nav-link:hover { color: #fff; }
+.admin-nav-link.active {
+  color: #c8ff00;
+  border-bottom: 1px solid #c8ff00;
 }
 
-.admin-nav-link.active {
-  @apply bg-blue-50 dark:bg-blue-900 text-blue-600 dark:text-blue-200;
-} 
+/* Section heading */
+.admin-section-title {
+  @apply text-xs font-semibold tracking-widest uppercase mb-6;
+  color: #c8ff00;
+  font-family: var(--font-mono), monospace;
+}
