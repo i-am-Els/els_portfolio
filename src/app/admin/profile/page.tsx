@@ -779,67 +779,7 @@ export default function ProfileAdmin() {
             {experienceSaveMessage.text}
           </div>
         )}
-
-        {/* Display saved experiences */}
-        <div className="space-y-6 mb-8">
-          {savedExperiences.map((experience, index) => (
-            <div key={experience.id} className="border border-gray-200 rounded-lg p-6">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <h3 className="text-xl font-semibold">{experience.title}</h3>
-                  <p className="text-gray-600">{experience.company}</p>
-                  <p className="text-sm text-gray-500 mt-1">{experience.period}</p>
-                  <p className="text-gray-600 mt-4">{experience.description}</p>
-                  {experience.skills.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-4">
-                      {experience.skills.map((skill, skillIndex) => (
-                        <span
-                          key={skillIndex}
-                          className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="ml-4 flex items-center space-x-2">
-                  <button
-                    onClick={() => reorderExperience(index, 'up')}
-                    className="p-2 text-gray-500 hover:text-gray-700"
-                    disabled={index === 0}
-                    title="Move up"
-                  >
-                    ↑
-                  </button>
-                  <button
-                    onClick={() => reorderExperience(index, 'down')}
-                    className="p-2 text-gray-500 hover:text-gray-700"
-                    disabled={index === savedExperiences.length - 1}
-                    title="Move down"
-                  >
-                    ↓
-                  </button>
-                  <button
-                    onClick={() => startEditingExperience(experience)}
-                    className="p-2 text-blue-500 hover:text-blue-700"
-                    title="Edit experience"
-                  >
-                    ✎
-                  </button>
-                  <button
-                    onClick={() => deleteExperience(experience.id)}
-                    className="p-2 text-red-500 hover:text-red-700"
-                    title="Delete experience"
-                  >
-                    ×
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
+     
         {/* Form for new/edit experience */}
         {formExperience && (
           <div className="mt-8 pt-8 border-t border-gray-200">
@@ -928,6 +868,67 @@ export default function ProfileAdmin() {
             </div>
           </div>
         )}
+
+        {/* Display saved experiences */}
+        <div className="space-y-6 mb-8">
+          {savedExperiences.map((experience, index) => (
+            <div key={experience.id} className="border border-gray-200 rounded-lg p-6">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <h3 className="text-xl font-semibold">{experience.title}</h3>
+                  <p className="text-gray-600">{experience.company}</p>
+                  <p className="text-sm text-gray-500 mt-1">{experience.period}</p>
+                  <p className="text-gray-600 mt-4">{experience.description}</p>
+                  {experience.skills.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      {experience.skills.map((skill, skillIndex) => (
+                        <span
+                          key={skillIndex}
+                          className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="ml-4 flex items-center space-x-2">
+                  <button
+                    onClick={() => reorderExperience(index, 'up')}
+                    className="p-2 text-gray-500 hover:text-gray-700"
+                    disabled={index === 0}
+                    title="Move up"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    onClick={() => reorderExperience(index, 'down')}
+                    className="p-2 text-gray-500 hover:text-gray-700"
+                    disabled={index === savedExperiences.length - 1}
+                    title="Move down"
+                  >
+                    ↓
+                  </button>
+                  <button
+                    onClick={() => startEditingExperience(experience)}
+                    className="p-2 text-blue-500 hover:text-blue-700"
+                    title="Edit experience"
+                  >
+                    ✎
+                  </button>
+                  <button
+                    onClick={() => deleteExperience(experience.id)}
+                    className="p-2 text-red-500 hover:text-red-700"
+                    title="Delete experience"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
       </div>
 
       {/* Skills Section */}
@@ -947,6 +948,59 @@ export default function ProfileAdmin() {
             skillSaveMessage.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
           }`}>
             {skillSaveMessage.text}
+          </div>
+        )}
+
+        {/* Form for new/edit skill */}
+        {formSkill && (
+          <div className="mt-8 pt-8 border-t border-gray-200">
+            <h3 className="text-lg font-semibold mb-4">
+              {isEditingSkill ? 'Edit Skill Category' : 'Add New Skill Category'}
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Category Name
+                </label>
+                <input
+                  type="text"
+                  value={formSkill.category}
+                  onChange={(e) => setFormSkill({ ...formSkill, category: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  placeholder="e.g. Programming Languages"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Skills (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={formSkill.items.join(', ')}
+                  onChange={(e) => setFormSkill({ 
+                    ...formSkill, 
+                    items: e.target.value.split(',').map(s => s.trim())
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  placeholder="e.g. JavaScript, TypeScript, React"
+                />
+              </div>
+              <div className="flex justify-end space-x-4">
+                <button
+                  onClick={cancelSkillForm}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveSkill}
+                  disabled={isSavingSkills}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 disabled:opacity-50"
+                >
+                  {isSavingSkills ? 'Saving...' : isEditingSkill ? 'Update Skill Category' : 'Save Skill Category'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -1005,58 +1059,6 @@ export default function ProfileAdmin() {
           ))}
         </div>
 
-        {/* Form for new/edit skill */}
-        {formSkill && (
-          <div className="mt-8 pt-8 border-t border-gray-200">
-            <h3 className="text-lg font-semibold mb-4">
-              {isEditingSkill ? 'Edit Skill Category' : 'Add New Skill Category'}
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Category Name
-                </label>
-                <input
-                  type="text"
-                  value={formSkill.category}
-                  onChange={(e) => setFormSkill({ ...formSkill, category: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                  placeholder="e.g. Programming Languages"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Skills (comma-separated)
-                </label>
-                <input
-                  type="text"
-                  value={formSkill.items.join(', ')}
-                  onChange={(e) => setFormSkill({ 
-                    ...formSkill, 
-                    items: e.target.value.split(',').map(s => s.trim())
-                  })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                  placeholder="e.g. JavaScript, TypeScript, React"
-                />
-              </div>
-              <div className="flex justify-end space-x-4">
-                <button
-                  onClick={cancelSkillForm}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={saveSkill}
-                  disabled={isSavingSkills}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 disabled:opacity-50"
-                >
-                  {isSavingSkills ? 'Saving...' : isEditingSkill ? 'Update Skill Category' : 'Save Skill Category'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Education Section */}
