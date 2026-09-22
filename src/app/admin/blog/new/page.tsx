@@ -387,14 +387,14 @@ export default function NewBlogPostPage() {
           <div className="flex mb-2 border-b">
             <button
               type="button"
-              className={`px-4 py-2 focus:outline-none ${editorTab === 'edit' ? 'border-b-2 border-blue-500 font-semibold text-blue-600' : 'text-gray-500'}`}
+              className={`px-4 py-2 focus:outline-none ${editorTab === 'edit' ? 'border-b-2 border-[#c8ff00] font-semibold text-[#c8ff00]' : 'text-gray-500'}`}
               onClick={() => setEditorTab('edit')}
             >
               Edit
             </button>
             <button
               type="button"
-              className={`px-4 py-2 focus:outline-none ${editorTab === 'preview' ? 'border-b-2 border-blue-500 font-semibold text-blue-600' : 'text-gray-500'}`}
+              className={`px-4 py-2 focus:outline-none ${editorTab === 'preview' ? 'border-b-2 border-[#c8ff00] font-semibold text-[#c8ff00]' : 'text-gray-500'}`}
               onClick={() => setEditorTab('preview')}
             >
               Preview
@@ -408,7 +408,7 @@ export default function NewBlogPostPage() {
               className="min-h-[300px]"
             />
           ) : (
-            <div className="prose max-w-none border rounded p-4 bg-white min-h-[300px]">
+            <div className="prose prose-invert max-w-none border border-white/10 p-6 bg-[#141414] min-h-[300px] [&_h1]:text-white [&_h2]:text-white [&_h3]:text-white [&_p]:text-white/70 [&_a]:text-[#c8ff00] [&_strong]:text-white [&_li]:text-white/70 [&_blockquote]:border-[#c8ff00] [&_blockquote]:text-white/50 [&_code]:text-[#c8ff00] [&_code]:bg-white/5">
               <div dangerouslySetInnerHTML={{ __html: post.content }} />
             </div>
           )}
