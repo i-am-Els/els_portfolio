@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import ContactFooter from '@/components/ContactFooter';
+import { resolveHtmlImages, resolveMediaUrl } from '@/utils/mediaUrl';
 
 interface Project {
   id: string;
@@ -48,11 +49,7 @@ export default function ProjectPage({ params }: { params: { slug: string } }) {
     }
   };
 
-  const getImageUrl = (path: string) => {
-    if (!path) return '';
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${path}`;
-  };
+  const getImageUrl = (path: string) => resolveMediaUrl(path);
 
   if (isLoading) return (
     <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center">
@@ -128,7 +125,7 @@ export default function ProjectPage({ params }: { params: { slug: string } }) {
                 [&_a]:text-[#c8ff00] [&_a]:no-underline [&_a:hover]:underline
                 [&_ul]:text-white/50 [&_ol]:text-white/50
                 [&_li]:mb-1"
-              dangerouslySetInnerHTML={{ __html: project.description }}
+              dangerouslySetInnerHTML={{ __html: resolveHtmlImages(project.description) }}
             />
           </motion.div>
 

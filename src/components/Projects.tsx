@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { categories, categoryTagMap } from '@/data/categories';
+import { resolveMediaUrl } from '@/utils/mediaUrl';
 
 interface Project {
   id: string;
@@ -52,15 +53,7 @@ export default function Projects() {
     }
   };
 
-  const getImageUrl = (path: string) => {
-    if (!path) return '';
-    // If the path is already an absolute URL, return it as is
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
-    }
-    // Otherwise, construct the absolute URL
-    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${path}`;
-  };
+  const getImageUrl = (path: string) => resolveMediaUrl(path);
 
   const filteredProjects = activeCategory === 'all' 
     ? projects 

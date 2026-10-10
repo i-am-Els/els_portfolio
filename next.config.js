@@ -7,6 +7,11 @@ const nextConfig = {
         hostname: '**.supabase.co',
         pathname: '/storage/v1/object/public/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'f005.backblazeb2.com',
+        pathname: '/file/portfolio-elsrael/**',
+      },
     ],
   },
   async headers() {

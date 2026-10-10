@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Link from 'next/link';
+import { resolveMediaUrl } from '@/utils/mediaUrl';
 
 const MotionLink = motion.create(Link);
 
@@ -52,11 +53,7 @@ export default function Blog() {
     }
   };
 
-  const getImageUrl = (path: string) => {
-    if (!path) return '';
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${path}`;
-  };
+  const getImageUrl = (path: string) => resolveMediaUrl(path);
 
   return (
     <section id="blog" className="bg-[#0d0d0d] py-32">

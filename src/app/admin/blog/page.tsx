@@ -7,6 +7,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { motion } from 'framer-motion';
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
+import { resolveMediaUrl } from '@/utils/mediaUrl';
 
 interface BlogPost {
   id: string;
@@ -27,15 +28,7 @@ export default function BlogPostsPage() {
   const router = useRouter();
   const supabase = createClientComponentClient();
 
-  const getImageUrl = (path: string) => {
-    if (!path) return '';
-    // If the path is already an absolute URL, return it as is
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
-    }
-    // Otherwise, construct the absolute URL
-    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${path}`;
-  };
+  const getImageUrl = (path: string) => resolveMediaUrl(path);
 
   useEffect(() => {
     fetchPosts();

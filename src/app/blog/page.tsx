@@ -7,6 +7,7 @@ import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import ContactFooter from '@/components/ContactFooter';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { resolveMediaUrl } from '@/utils/mediaUrl';
 
 const ITEMS_PER_PAGE = 6;
 
@@ -75,11 +76,7 @@ export default function BlogPage() {
     }
   };
 
-  const getImageUrl = (path: string) => {
-    if (!path) return '';
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${path}`;
-  };
+  const getImageUrl = (path: string) => resolveMediaUrl(path);
 
   const filteredPosts = activeCategory === 'all'
     ? posts

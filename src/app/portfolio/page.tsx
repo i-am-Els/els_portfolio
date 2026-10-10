@@ -7,6 +7,7 @@ import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import ContactFooter from '@/components/ContactFooter';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { resolveMediaUrl } from '@/utils/mediaUrl';
 
 interface Project {
   id: string;
@@ -153,7 +154,7 @@ export default function PortfolioPage() {
                   >
                     <Link href={`/portfolio/${project.slug}`} className="group block relative overflow-hidden" style={{ height: '380px' }}>
                       {project.image_url ? (
-                        <Image src={project.image_url} alt={project.title} fill className="object-cover transition-transform duration-700 group-hover:scale-105" />
+                        <Image src={resolveMediaUrl(project.image_url)} alt={project.title} fill className="object-cover transition-transform duration-700 group-hover:scale-105" />
                       ) : (
                         <div className="absolute inset-0 bg-[#141414]" />
                       )}

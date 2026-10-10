@@ -9,6 +9,7 @@ import React, { useRef } from 'react';
 import NextLink from 'next/link';
 import Image from 'next/image';
 import { useFlashMessage } from '@/components/FlashMessage';
+import { resolveHtmlImages, resolveMediaUrl } from '@/utils/mediaUrl';
 
 interface Category {
   id: string;
@@ -498,7 +499,7 @@ export default function EditBlogPostPage({ params }: PageProps) {
               {(imagePreview || post.image_url) && (
                 <div className="relative h-32 w-32">
                   <Image
-                    src={imagePreview || post.image_url || ''}
+                    src={resolveMediaUrl(imagePreview || post.image_url) || ''}
                     alt="Post preview"
                     width={128}
                     height={128}
@@ -571,7 +572,7 @@ export default function EditBlogPostPage({ params }: PageProps) {
             />
           ) : (
             <div className="prose prose-invert max-w-none border border-white/10 p-6 bg-[#141414] min-h-[300px] [&_h1]:text-white [&_h2]:text-white [&_h3]:text-white [&_p]:text-white/70 [&_a]:text-[#c8ff00] [&_strong]:text-white [&_li]:text-white/70 [&_blockquote]:border-[#c8ff00] [&_blockquote]:text-white/50 [&_code]:text-[#c8ff00] [&_code]:bg-white/5">
-              <div dangerouslySetInnerHTML={{ __html: post.content }} />
+              <div dangerouslySetInnerHTML={{ __html: resolveHtmlImages(post.content) }} />
             </div>
           )}
         </div>

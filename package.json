@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "media:upload": "node scripts/upload-media-to-b2.mjs",
+    "media:upload:dry": "node scripts/upload-media-to-b2.mjs --dry-run"
   },
   "dependencies": {
     "@heroicons/react": "^2.1.1",

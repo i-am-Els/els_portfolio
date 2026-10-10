@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import Navigation from '@/components/Navigation';
 import ContactFooter from '@/components/ContactFooter';
 import Link from 'next/link';
+import { resolveHtmlImages, resolveMediaUrl } from '@/utils/mediaUrl';
 
 interface BlogPost {
   id: string;
@@ -49,11 +50,7 @@ export default function BlogPost({ params }: { params: { slug: string } }) {
     }
   };
 
-  const getImageUrl = (path: string) => {
-    if (!path) return '';
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${path}`;
-  };
+  const getImageUrl = (path: string) => resolveMediaUrl(path);
 
   if (isLoading) return (
     <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center">
@@ -143,7 +140,7 @@ export default function BlogPost({ params }: { params: { slug: string } }) {
               [&_pre]:bg-[#141414] [&_pre]:border [&_pre]:border-white/10 [&_pre]:p-6
               [&_ul]:text-white/60 [&_ol]:text-white/60 [&_li]:mb-2
               [&_img]:w-full [&_img]:my-8"
-            dangerouslySetInnerHTML={{ __html: post.content }}
+            dangerouslySetInnerHTML={{ __html: resolveHtmlImages(post.content) }}
           />
         </motion.div>
 

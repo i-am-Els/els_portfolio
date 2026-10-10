@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
+import { resolveMediaUrl } from '@/utils/mediaUrl';
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const supabase = createServerComponentClient({ cookies });
@@ -32,7 +33,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       tags: post.tags,
       images: post.image_url ? [
         {
-          url: post.image_url,
+          url: resolveMediaUrl(post.image_url),
           width: 1200,
           height: 630,
           alt: post.title,
@@ -43,7 +44,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       card: 'summary_large_image',
       title: post.title,
       description: post.excerpt || post.content.substring(0, 160),
-      images: post.image_url ? [post.image_url] : undefined,
+      images: post.image_url ? [resolveMediaUrl(post.image_url)] : undefined,
     },
   };
 }

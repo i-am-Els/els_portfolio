@@ -7,6 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { resolveMediaUrl } from '@/utils/mediaUrl';
 
 interface Profile {
   id: string;
@@ -588,7 +589,7 @@ export default function ProfileAdmin() {
                 {(imagePreview || profile?.image_url) ? (
                   <div className="relative w-full h-full">
                     <Image
-                      src={imagePreview || profile?.image_url || ''}
+                      src={resolveMediaUrl(imagePreview || profile?.image_url) || ''}
                       alt="Profile"
                       fill
                       sizes="128px"

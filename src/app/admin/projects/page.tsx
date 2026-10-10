@@ -5,6 +5,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { resolveMediaUrl } from '@/utils/mediaUrl';
 
 interface Project {
   id: string;
@@ -121,7 +122,7 @@ export default function ProjectsPage() {
                   <div className="flex items-center space-x-3">
                     {project.image_url && (
                       <img
-                        src={project.image_url}
+                        src={resolveMediaUrl(project.image_url)}
                         alt={project.title}
                         className="h-10 w-10 rounded-lg object-cover"
                       />

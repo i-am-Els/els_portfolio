@@ -7,6 +7,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
+import { resolveMediaUrl } from '@/utils/mediaUrl';
 
 interface Project {
   id: string;
@@ -384,7 +385,7 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
                 {(imagePreview || project.image_url) && (
                   <div className="relative h-32 w-32">
                     <Image
-                      src={imagePreview || project.image_url || ''}
+                      src={resolveMediaUrl(imagePreview || project.image_url) || ''}
                       alt="Project preview"
                       fill
                       className="object-cover rounded-lg"

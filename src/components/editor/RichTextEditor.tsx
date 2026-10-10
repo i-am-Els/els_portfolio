@@ -8,6 +8,7 @@ import TiptapLink from '@tiptap/extension-link';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import { common, createLowlight } from 'lowlight';
 import { useRef, useEffect } from 'react';
+import { resolveHtmlImages } from '@/utils/mediaUrl';
 // For image upload
 import { useRef as useReactRef } from 'react';
 import {
@@ -88,6 +89,10 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(
     });
   }, [content]);
 
+  // Media lives in Backblaze B2; legacy Supabase URLs in stored HTML are
+  // rewritten before the content reaches the editor.
+  const resolvedContent = resolveHtmlImages(content);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -118,7 +123,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(
         },
       }),
     ],
-    content,
+    content: resolvedContent,
     editorProps: {
       attributes: {
         class: `h-[600px] overflow-y-auto p-4 focus:outline-none ${className}`,
@@ -133,10 +138,10 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(
 
   // Sync editor content with prop if it changes (e.g. after fetch)
   useEffect(() => {
-    if (editor && content !== editor.getHTML()) {
-      editor.commands.setContent(content || '', false);
+    if (editor && resolvedContent !== editor.getHTML()) {
+      editor.commands.setContent(resolvedContent || '', false);
     }
-  }, [content, editor]);
+  }, [resolvedContent, editor]);
 
   return (
     <div>

@@ -6,6 +6,7 @@ import { fadeUp, staggerContainer, lineGrow } from '@/lib/motion';
 import Image from 'next/image';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Link from 'next/link';
+import { resolveMediaUrl } from '@/utils/mediaUrl';
 
 const MotionLink = motion.create(Link);
 
@@ -43,7 +44,7 @@ function HeroCard({ project }: { project: Project }) {
         style={{ height: '600px' }}
       >
         {project.image_url ? (
-          <Image src={project.image_url} alt={project.title} fill className="object-cover transition-transform duration-700 group-hover:scale-105" />
+          <Image src={resolveMediaUrl(project.image_url)} alt={project.title} fill className="object-cover transition-transform duration-700 group-hover:scale-105" />
         ) : (
           <div className="absolute inset-0 bg-[#141414]" />
         )}
@@ -77,7 +78,7 @@ function GridCard({ project }: { project: Project }) {
         style={{ height: '380px' }}
       >
         {project.image_url ? (
-          <Image src={project.image_url} alt={project.title} fill className="object-cover transition-transform duration-700 group-hover:scale-105" />
+          <Image src={resolveMediaUrl(project.image_url)} alt={project.title} fill className="object-cover transition-transform duration-700 group-hover:scale-105" />
         ) : (
           <div className="absolute inset-0 bg-[#141414]" />
         )}

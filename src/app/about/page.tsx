@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Navigation from '@/components/Navigation';
 import ContactFooter from '@/components/ContactFooter';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { resolveMediaUrl } from '@/utils/mediaUrl';
 
 interface Profile {
   id: string;
@@ -125,7 +126,7 @@ export default function AboutPage() {
               </div>
             </motion.div>
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }} className="relative overflow-hidden" style={{ height: '420px' }}>
-              <Image src={profile?.image_url || '/profile.jpg'} alt="Eniola Olawale" fill className="object-cover" />
+              <Image src={resolveMediaUrl(profile?.image_url) || '/profile.jpg'} alt="Eniola Olawale" fill className="object-cover" />
             </motion.div>
           </div>
         </section>
