@@ -10,11 +10,14 @@
  *   project-images/{projectId}/thumbnail/{name}.webp
  *   images/{profileId}.webp
  */
-import { createHash } from 'node:crypto';
+import { createHash, createHmac } from 'node:crypto';
 
 const AUTH_URL = 'https://api.backblazeb2.com/b2api/v3/b2_authorize_account';
 const API_V3 = '/b2api/v3';
 const AUTH_TTL_MS = 9 * 60 * 1000;
+
+const S3_API_URL = process.env.B2_S3_API_URL || 'https://s3.us-east-005.backblazeb2.com';
+const S3_REGION = process.env.B2_S3_REGION || 'us-east-005';
 
 /** Public base for reading objects back. Kept in sync with src/utils/mediaUrl.ts. */
 export const B2_PUBLIC_BASE = (
@@ -32,6 +35,10 @@ interface B2Auth {
 }
 
 export type DeleteMethod = 'delete' | 'hide' | 'none';
+
+const hmac = (key: Buffer | string, data: string) =>
+  createHmac('sha256', key).update(data).digest();
+const sha256hex = (data: string) => createHash('sha256').update(data).digest('hex');
 
 let cachedAuth: { value: B2Auth; at: number } | null = null;
 
@@ -162,60 +169,86 @@ export async function uploadObject(
   return { key, url: `${B2_PUBLIC_BASE}/${key}`, fileId };
 }
 
-/** Resolve an object key to its fileId by listing its folder. */
-async function findFileId(auth: B2Auth, key: string): Promise<string | null> {
-  const slash = key.lastIndexOf('/');
-  const dir = slash === -1 ? '' : key.slice(0, slash + 1);
-
-  let start: string | undefined;
-  for (;;) {
-    const body: Record<string, unknown> = {
-      bucketId: auth.bucketId,
-      prefix: dir || undefined,
-      maxFileCount: 1000,
-    };
-    if (start) body.startFileName = start;
-
-    const data = await b2Post<{
-      files?: { fileName: string; fileId: string }[];
-      nextFileName?: string | null;
-    }>(auth, 'b2_list_file_names', body);
-
-    for (const file of data.files ?? []) {
-      if (file.fileName === key) return file.fileId;
-    }
-    start = data.nextFileName ?? undefined;
-    if (!start) return null;
-  }
+/** Every version id for a key, including hide markers. */
+async function listVersionIds(auth: B2Auth, key: string): Promise<string[]> {
+  const data = await b2Post<{
+    files?: { fileName: string; fileId: string; action: string }[];
+  }>(auth, 'b2_list_file_versions', { bucketId: auth.bucketId, prefix: key, maxFileCount: 100 });
+  return (data.files ?? []).filter((f) => f.fileName === key).map((f) => f.fileId);
 }
 
 /**
- * Make an object unreachable. Idempotent — returns whether it actually did
- * something, and how.
+ * Hard-delete one object version through B2's S3-compatible endpoint.
  *
- * Tries a hard delete first. This Backblaze account currently REFUSES hard
- * deletes: `b2_delete_file` answers 404 `not_found` for a fileId that
- * `b2_get_file_info` confirms is valid, despite the key holding the
- * `deleteFiles` capability. In that case we hide the object instead, which
- * produces the same observable result — it disappears from listings and its
- * public URL starts returning 404. A hidden object keeps occupying storage
- * until it's purged from the Backblaze console, which at ~5 MB is a non-issue.
+ * `b2_delete_file` is refused on this account — it answers 404 `not_found` for
+ * a fileId that `b2_get_file_info` had just confirmed is valid, even though the
+ * key holds the `deleteFiles` capability. The S3 endpoint has no such problem,
+ * as long as the DELETE is pinned to a versionId. (A plain S3 DELETE is not
+ * enough: it just writes a hide marker, which is what produced the 0 KB files.)
+ *
+ * Because it deletes by version, it also removes hide markers — the only way to
+ * clean one up.
+ */
+async function s3DeleteVersion(key: string, fileId: string): Promise<boolean> {
+  const { keyId, appKey } = requireCredentials();
+  const bucket = process.env.B2_BUCKET || 'portfolio-elsrael';
+  const host = new URL(S3_API_URL).host;
+
+  const amzDate = new Date().toISOString().replace(/[:-]|\.\d{3}/g, '');
+  const dateStamp = amzDate.slice(0, 8);
+  const payloadHash = sha256hex('');
+  const canonicalUri = `/${[bucket, ...key.split('/').filter(Boolean)].map(encodeURIComponent).join('/')}`;
+  const canonicalQuery = `versionId=${encodeURIComponent(fileId)}`;
+  const canonicalHeaders = `host:${host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}\n`;
+  const signedHeaders = 'host;x-amz-content-sha256;x-amz-date';
+  const canonicalRequest = [
+    'DELETE',
+    canonicalUri,
+    canonicalQuery,
+    canonicalHeaders,
+    signedHeaders,
+    payloadHash,
+  ].join('\n');
+  const scope = `${dateStamp}/${S3_REGION}/s3/aws4_request`;
+  const stringToSign = ['AWS4-HMAC-SHA256', amzDate, scope, sha256hex(canonicalRequest)].join('\n');
+  const kSigning = hmac(hmac(hmac(hmac(`AWS4${appKey}`, dateStamp), S3_REGION), 's3'), 'aws4_request');
+  const signature = createHmac('sha256', kSigning).update(stringToSign).digest('hex');
+
+  const res = await fetchWithRetry(`${S3_API_URL}${canonicalUri}?${canonicalQuery}`, {
+    method: 'DELETE',
+    headers: {
+      Host: host,
+      'x-amz-date': amzDate,
+      'x-amz-content-sha256': payloadHash,
+      Authorization: `AWS4-HMAC-SHA256 Credential=${keyId}/${scope}, SignedHeaders=${signedHeaders}, Signature=${signature}`,
+    },
+    cache: 'no-store',
+  });
+  return res.status === 200 || res.status === 204;
+}
+
+/**
+ * Make an object unreachable for good. Idempotent.
+ *
+ * Deletes every version of the key — the object itself plus any hide marker —
+ * so nothing lingers as a 0 KB entry. Returns how many versions were removed.
  *
  * B2 has no rename, so "moving" an object means uploading a copy then calling
  * this on the original.
  */
 export async function deleteObject(key: string): Promise<{ deleted: boolean; method: DeleteMethod }> {
   const auth = await authorize();
-  const fileId = await findFileId(auth, key);
-  if (!fileId) return { deleted: false, method: 'none' };
+  const versionIds = await listVersionIds(auth, key);
+  if (!versionIds.length) return { deleted: false, method: 'none' };
 
-  try {
-    await b2Post(auth, 'b2_delete_file', { fileName: key, fileId });
-    return { deleted: true, method: 'delete' };
-  } catch (err) {
-    console.warn(`[b2] hard delete refused for ${key}, falling back to hide:`, err);
+  let removed = 0;
+  for (const fileId of versionIds) {
+    if (await s3DeleteVersion(key, fileId)) removed += 1;
   }
+  if (removed > 0) return { deleted: true, method: 'delete' };
 
+  // Last resort. Hiding drops the object from listings and its public URL starts
+  // returning 404, but it leaves a 0 KB hide marker behind — avoid relying on it.
   try {
     await b2Post(auth, 'b2_hide_file', { bucketId: auth.bucketId, fileName: key });
     return { deleted: true, method: 'hide' };
