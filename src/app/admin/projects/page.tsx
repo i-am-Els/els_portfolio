@@ -6,6 +6,8 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { resolveMediaUrl } from '@/utils/mediaUrl';
+import { deleteMediaFolder } from '@/utils/mediaUpload';
+import { projectThumbnailPrefix } from '@/utils/mediaPaths';
 
 interface Project {
   id: string;
@@ -49,18 +51,8 @@ export default function ProjectsPage() {
     if (!confirm('Are you sure you want to delete this project?')) return;
 
     try {
-      // List all files in the project's thumbnail folder
-      const { data: files } = await supabase.storage
-        .from('project-images')
-        .list(`project-images/${id}/thumbnail`);
-
-      if (files && files.length > 0) {
-        // Delete all files in the thumbnail folder
-        const filesToDelete = files.map(file => `project-images/${id}/thumbnail/${file.name}`);
-        await supabase.storage
-          .from('project-images')
-          .remove(filesToDelete);
-      }
+      // Remove every image this project owned.
+      await deleteMediaFolder(projectThumbnailPrefix(id));
 
       // Delete the project record
       const { error } = await supabase

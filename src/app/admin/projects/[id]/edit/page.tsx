@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { resolveMediaUrl } from '@/utils/mediaUrl';
+import { uploadProjectImage, deleteMedia, keyFromUrl } from '@/utils/mediaUpload';
 
 interface Project {
   id: string;
@@ -136,48 +137,16 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
     }));
   };
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Delete old image if it exists
-      if (project.image_url) {
-        const oldImagePath = project.image_url.split('/').pop();
-        if (oldImagePath) {
-          const oldPath = `project-images/${params.id}/thumbnail/${oldImagePath}`;
-          await supabase.storage
-            .from('project-images')
-            .remove([oldPath]);
-        }
-      }
-
+      // Preview only — the old image is retired in handleSubmit, once the
+      // replacement has actually uploaded.
       setImageFile(file);
       // Create preview URL
       const previewUrl = URL.createObjectURL(file);
       setImagePreview(previewUrl);
     }
-  };
-
-  const uploadImage = async (file: File): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-    
-    // For new projects, use a temporary folder
-    const projectId = params.id === 'new' ? 'temp' : params.id;
-    const filePath = `project-images/${projectId}/thumbnail/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('project-images')
-      .upload(filePath, file);
-
-    if (uploadError) {
-      throw uploadError;
-    }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('project-images')
-      .getPublicUrl(filePath);
-
-    return publicUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -191,11 +160,13 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
         throw new Error('Please fill in all required fields');
       }
 
+      const isCreating = params.id === 'new';
       let imageUrl = project.image_url;
 
-      // Upload new image if one was selected
-      if (imageFile) {
-        imageUrl = await uploadImage(imageFile);
+      // For an existing project, upload the replacement BEFORE touching the row,
+      // so a failed upload never costs the old image.
+      if (!isCreating && imageFile) {
+        imageUrl = await uploadProjectImage(imageFile, params.id);
       }
 
       const projectData = {
@@ -212,41 +183,26 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
         updated_at: new Date().toISOString()
       };
 
-      if (params.id === 'new') {
+      if (isCreating) {
+        // The row has to exist before its image can have a home. This replaces
+        // the old upload-to-temp-then-copy dance, which needed a B2 "copyFiles"
+        // capability the application key doesn't have.
         const { data, error } = await supabase
           .from('projects')
-          .insert([{ ...projectData, created_at: new Date().toISOString() }])
+          .insert([{ ...projectData, image_url: null, created_at: new Date().toISOString() }])
           .select()
           .single();
 
         if (error) throw error;
 
-        // If we uploaded an image to temp folder, move it to the project's folder
-        if (imageFile && imageUrl) {
-          const oldPath = `project-images/temp/thumbnail/${imageUrl.split('/').pop()}`;
-          const newPath = `project-images/${data.id}/thumbnail/${imageUrl.split('/').pop()}`;
-          
-          // Copy to new location
-          const { error: copyError } = await supabase.storage
-            .from('project-images')
-            .copy(oldPath, newPath);
-          
-          if (copyError) throw copyError;
-
-          // Delete from temp location
-          await supabase.storage
-            .from('project-images')
-            .remove([oldPath]);
-
-          // Update the image URL
-          const { data: { publicUrl } } = supabase.storage
-            .from('project-images')
-            .getPublicUrl(newPath);
-
-          await supabase
+        if (imageFile) {
+          const finalUrl = await uploadProjectImage(imageFile, data.id);
+          const { error: imageError } = await supabase
             .from('projects')
-            .update({ image_url: publicUrl })
+            .update({ image_url: finalUrl })
             .eq('id', data.id);
+
+          if (imageError) throw imageError;
         }
 
         // Insert selected categories
@@ -269,6 +225,15 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
           .eq('id', params.id);
 
         if (error) throw error;
+
+        // Retire the replaced image only now that the row points at the new one.
+        if (imageFile) {
+          const newKey = keyFromUrl(imageUrl);
+          const oldKey = keyFromUrl(project.image_url);
+          if (oldKey && oldKey !== newKey) {
+            await deleteMedia(oldKey);
+          }
+        }
 
         // Update categories
         await supabase

@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { resolveMediaUrl } from '@/utils/mediaUrl';
+import { uploadProfileImage } from '@/utils/mediaUpload';
 
 interface Profile {
   id: string;
@@ -64,6 +65,8 @@ export default function ProfileAdmin() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [imageUploadMessage, setImageUploadMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  // Held locally until "Save Changes" is pressed — nothing reaches B2 before then.
+  const [imageFile, setImageFile] = useState<File | null>(null);
   
   // Separate states for experiences
   const [isSavingExperiences, setIsSavingExperiences] = useState(false);
@@ -186,16 +189,36 @@ export default function ProfileAdmin() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user found');
 
-      const { error } = await supabase
-        .from('profile')
-        .update({
-          ...profile,
-          user_id: user.id
-        })
-        .eq('id', profile.id);
+      setIsUploadingImage(true);
+      setImageUploadMessage(null);
 
-      if (error) throw error;
-      alert('Profile updated successfully!');
+      try {
+        // Upload the pending image first. The object name stays {profileId}.{ext},
+        // so re-saving simply replaces the current one.
+        let imageUrl = profile.image_url;
+        if (imageFile) {
+          imageUrl = await uploadProfileImage(imageFile, profile.id || user.id);
+        }
+
+        const { error } = await supabase
+          .from('profile')
+          .update({
+            ...profile,
+            image_url: imageUrl,
+            user_id: user.id
+          })
+          .eq('id', profile.id);
+
+        if (error) throw error;
+
+        setProfile(prev => (prev ? { ...prev, image_url: imageUrl } : prev));
+        setImageFile(null);
+        alert('Profile updated successfully!');
+      } catch (error: any) {
+        setError(error.message);
+      } finally {
+        setIsUploadingImage(false);
+      }
     } catch (error: any) {
       setError(error.message);
     }
@@ -425,64 +448,30 @@ export default function ProfileAdmin() {
     }
   };
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  /**
+   * Selecting a file only previews it. The upload happens in updateProfile(), so
+   * nothing reaches B2 until the user actually presses "Save Changes".
+   */
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Check file type
     if (!file.type.startsWith('image/')) {
       setImageUploadMessage({ type: 'error', text: 'Please upload an image file' });
       return;
     }
 
-    // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       setImageUploadMessage({ type: 'error', text: 'Image size should be less than 5MB' });
       return;
     }
 
-    // Create preview URL
-    const previewUrl = URL.createObjectURL(file);
-    setImagePreview(previewUrl);
-
-    setIsUploadingImage(true);
-    setImageUploadMessage(null);
-
-    try {
-      // Upload image to Supabase Storage
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${profile?.id || crypto.randomUUID()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage
-        .from('images')
-        .upload(fileName, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data } = supabase.storage
-        .from('images')
-        .getPublicUrl(fileName);
-
-      // Update profile with new image URL
-      const { error: updateError } = await supabase
-        .from('profile')
-        .update({ 
-          image_url: data.publicUrl,
-          user_id: profile?.user_id 
-        })
-        .eq('id', profile?.id);
-
-      if (updateError) throw updateError;
-
-      // Update local state
-      setProfile(prev => prev ? { ...prev, image_url: data.publicUrl } : null);
-      setImageUploadMessage({ type: 'success', text: 'Profile image updated successfully!' });
-    } catch (error: any) {
-      console.error('Error uploading image:', error);
-      setImageUploadMessage({ type: 'error', text: `Error uploading image: ${error.message}` });
-    } finally {
-      setIsUploadingImage(false);
-    }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+    setImageUploadMessage({
+      type: 'success',
+      text: 'New image selected. It will be uploaded when you press Save Changes.',
+    });
   };
 
   const handleAddEducation = () => {
@@ -577,7 +566,7 @@ export default function ProfileAdmin() {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            Please wait while your image is uploading. Do not click "Save Changes" until the upload is complete.
+            Saving your changes… this also uploads any newly selected profile image.
           </div>
         )}
 

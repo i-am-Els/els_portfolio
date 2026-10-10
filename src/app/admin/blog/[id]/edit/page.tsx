@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { RichTextEditor, RichTextEditorHandle } from '@/components/editor/RichTextEditor';
-import { uploadBlogImageToSupabase } from '@/utils/supabaseUpload';
+import { uploadBlogImage, deleteMedia, keyFromUrl } from '@/utils/mediaUpload';
 import React, { useRef } from 'react';
 import NextLink from 'next/link';
 import Image from 'next/image';
@@ -151,19 +151,12 @@ export default function EditBlogPostPage({ params }: PageProps) {
     }
   }, [post.content]);
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // If there's an existing image, delete it first
-      if (post.image_url) {
-        const oldPath = post.image_url.split('/').pop();
-        if (oldPath) {
-          await supabase.storage
-            .from('blog-images')
-            .remove([`blog-images/${params.id}/thumbnail/${oldPath}`]);
-        }
-      }
-      
+      // Preview only. The old featured image is swapped out in handleSubmit, once
+      // the replacement has actually uploaded — previously it was deleted here,
+      // before the save, under a path that never matched anything.
       setImageFile(file);
       const previewUrl = URL.createObjectURL(file);
       setImagePreview(previewUrl);
@@ -200,22 +193,15 @@ export default function EditBlogPostPage({ params }: PageProps) {
       }
 
       let imageUrl = post.image_url;
-      // Remove previous featured image (thumbnail) from Supabase if changed
-      if (imageFile && post.image_url) {
-        try {
-          const oldPath = post.image_url.split('/').pop();
-          if (oldPath) {
-            await supabase.storage
-              .from('blog-images')
-              .remove([`blog-images/${params.id}/thumbnail/${oldPath}`]);
-          }
-        } catch (err) {
-          // Ignore deletion errors
-        }
-      }
-      // Upload new featured image if selected
       if (imageFile) {
-        imageUrl = await uploadBlogImageToSupabase(imageFile, params.id);
+        // Upload first, swap second — so a failed upload never costs you the
+        // old image.
+        imageUrl = await uploadBlogImage(imageFile, params.id, 'thumbnail');
+        const newKey = keyFromUrl(imageUrl);
+        const oldKey = keyFromUrl(post.image_url);
+        if (oldKey && oldKey !== newKey) {
+          await deleteMedia(oldKey);
+        }
       }
 
       // Prepare post data
@@ -271,8 +257,7 @@ export default function EditBlogPostPage({ params }: PageProps) {
       const pendingImages = editorRef.current?.getPendingImages() || {};
       const replaceMap: { [localUrl: string]: string } = {};
       for (const [localUrl, file] of Object.entries(pendingImages)) {
-        const supaUrl = await uploadBlogImageToSupabase(file, blogId);
-        replaceMap[localUrl] = supaUrl;
+        replaceMap[localUrl] = await uploadBlogImage(file, blogId, 'content');
       }
       if (Object.keys(replaceMap).length > 0) {
         editorRef.current?.replaceImageSrcs(replaceMap);
@@ -280,52 +265,24 @@ export default function EditBlogPostPage({ params }: PageProps) {
       const updatedContent = editorRef.current?.editor?.getHTML() || post.content;
 
       if (params.id !== 'new') {
-        // --- Robust image deletion logic ---
-        // 1. Extract all image URLs before and after editing
+        // Delete inline images the author dropped from the post body. Anything
+        // still referenced survives; an image inserted and then removed before
+        // saving never reached B2 in the first place, so it needs no cleanup.
         const beforeSet = extractImageUrls(originalContent);
         const afterSet = extractImageUrls(updatedContent);
-        const removedImages = Array.from(beforeSet).filter(url => !afterSet.has(url));
-        console.log('[DEBUG] Images before edit:', Array.from(beforeSet));
-        console.log('[DEBUG] Images after edit:', Array.from(afterSet));
-        console.log('[DEBUG] Removed images:', removedImages);
+        const removedImages = Array.from(beforeSet).filter((url) => !afterSet.has(url));
+        const blobToStoredUrl = editorRef.current?.getBlobToSupabaseUrlMap?.() || {};
 
-        // 3. Get the latest blob-to-Supabase mapping from the editor
-        const blobToSupabaseUrl = editorRef.current?.getBlobToSupabaseUrlMap ? editorRef.current.getBlobToSupabaseUrlMap() : {};
-
-        // 4. For each removed image, resolve to Supabase URL if needed and delete
         for (const removedUrl of removedImages) {
-          let supaUrl: string | undefined = removedUrl;
-          if (removedUrl.startsWith('blob:')) {
-            supaUrl = blobToSupabaseUrl[removedUrl];
-            console.log('[DEBUG] Blob removed:', removedUrl, '→ Supabase URL:', supaUrl);
-          }
-          if (typeof supaUrl === 'string' && supaUrl.startsWith(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/`)) {
-            let storagePath = supaUrl.replace(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/`, '');
-            if (storagePath.startsWith('blog-images/blog-images/')) {
-              storagePath = storagePath.replace('blog-images/blog-images/', 'blog-images/');
-            }
-            console.log('[DEBUG] Deleting from Supabase:', { removedUrl, supaUrl, storagePath });
-            // Only delete if path is in the content folder for this blog
-            if (
-              storagePath.startsWith(`blog-images/${blogId}/content/`) ||
-              storagePath.startsWith(`blog-images/blog-images/${blogId}/content/`)
-            ) {
-              const { error } = await supabase.storage
-                .from('blog-images')
-                .remove([storagePath]);
-              if (error) {
-                console.error('Supabase image delete error:', error, 'for', storagePath);
-              }
-            }
-          } else {
-            if (removedUrl.startsWith('blob:')) {
-              console.log('[DEBUG] Skipped blob, could not resolve Supabase URL:', removedUrl);
-            } else {
-              console.log('[DEBUG] Skipped non-Supabase image:', removedUrl);
-            }
+          const resolved = removedUrl.startsWith('blob:')
+            ? blobToStoredUrl[removedUrl]
+            : removedUrl;
+          const key = keyFromUrl(resolved);
+          // Scoped to this post's own content folder — never its featured image.
+          if (key && key.startsWith(`blog-images/${blogId}/content/`)) {
+            await deleteMedia(key);
           }
         }
-        // --- End robust image deletion logic ---
       }
 
 

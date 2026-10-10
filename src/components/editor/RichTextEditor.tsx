@@ -63,31 +63,13 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(
       editor: editorRef.current,
     }), [pendingImages, setContent, blobToSupabaseUrl]);
 
-  // Patch: Map blob URLs to Supabase URLs on load
-  useEffect(() => {
-    // Only run on mount/content change
-    if (!content) return;
-    const temp = document.createElement('div');
-    temp.innerHTML = content;
-    const imgs = temp.querySelectorAll('img');
-    const mapping: { [blobUrl: string]: string } = {};
-    imgs.forEach(img => {
-      const src = img.src;
-      // Only map Supabase URLs
-      if (src.includes('/storage/v1/object/public/')) {
-        // Attempt to create a blob for this image to simulate editor's behavior
-        fetch(src)
-          .then(res => res.blob())
-          .then(blob => {
-            const blobUrl = URL.createObjectURL(blob);
-            mapping[blobUrl] = src;
-            // Also map the original Supabase URL to itself for fallback
-            mapping[src] = src;
-            setBlobToSupabaseUrl(current => ({ ...current, [blobUrl]: src, [src]: src }));
-          });
-      }
-    });
-  }, [content]);
+  // Blob→stored-URL map. Kept as part of the editor handle contract; the
+  // removal-cleanup in the blog editor falls back to the src itself, which is
+  // what actually matters now that stored content is plain B2 URLs.
+  //
+  // (An earlier version of this hook fetched every image in the post on each
+  // content change just to build this map, and only matched Supabase storage
+  // URLs — after the B2 migration it could never fire, so it was removed.)
 
   // Media lives in Backblaze B2; legacy Supabase URLs in stored HTML are
   // rewritten before the content reaches the editor.

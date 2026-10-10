@@ -7,7 +7,7 @@ import { RichTextEditor, RichTextEditorHandle } from '@/components/editor/RichTe
 import NextLink from 'next/link';
 import Image from 'next/image';
 import { useFlashMessage } from '@/components/FlashMessage';
-import { uploadBlogImageToSupabase } from '@/utils/supabaseUpload';
+import { uploadBlogImage } from '@/utils/mediaUpload';
 import React, { useRef } from 'react';
 import { resolveHtmlImages, resolveMediaUrl } from '@/utils/mediaUrl';
 
@@ -165,17 +165,22 @@ export default function NewBlogPostPage() {
       const pendingImages = editorRef.current?.getPendingImages() || {};
       const replaceMap: { [localUrl: string]: string } = {};
       for (const [localUrl, file] of Object.entries(pendingImages)) {
-        const supaUrl = await uploadBlogImageToSupabase(file, blogId);
-        replaceMap[localUrl] = supaUrl;
+        replaceMap[localUrl] = await uploadBlogImage(file, blogId, 'content');
       }
       if (Object.keys(replaceMap).length > 0) {
         editorRef.current?.replaceImageSrcs(replaceMap);
       }
       const updatedContent = editorRef.current?.editor?.getHTML() || post.content;
 
+      // The featured image chosen in this form was never uploaded — it used to be
+      // dropped silently. Now that the row exists we can give it its real folder.
+      const imageUrl = imageFile
+        ? await uploadBlogImage(imageFile, blogId, 'thumbnail')
+        : post.image_url;
+
       const { error: updateError } = await supabase
         .from('blog_posts')
-        .update({ content: updatedContent })
+        .update({ content: updatedContent, image_url: imageUrl })
         .eq('id', blogId);
       if (updateError) throw updateError;
 

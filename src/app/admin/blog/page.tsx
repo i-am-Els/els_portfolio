@@ -8,6 +8,8 @@ import { motion } from 'framer-motion';
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import { resolveMediaUrl } from '@/utils/mediaUrl';
+import { deleteMediaFolder } from '@/utils/mediaUpload';
+import { blogContentPrefix, blogThumbnailPrefix } from '@/utils/mediaPaths';
 
 interface BlogPost {
   id: string;
@@ -54,30 +56,10 @@ export default function BlogPostsPage() {
     if (!confirm('Are you sure you want to delete this post?')) return;
 
     try {
-      // List all files in the blog post's thumbnail folder
-      const { data: files } = await supabase.storage
-        .from('blog-images')
-        .list(`blog-images/${id}/thumbnail`);
-
-      const { data: files2 } = await supabase.storage
-        .from('blog-images')
-        .list(`blog-images/${id}/content`);
-
-      if (files && files.length > 0) {
-        // Delete all files in the thumbnail folder
-        const filesToDelete = files.map(file => `blog-images/${id}/thumbnail/${file.name}`);
-        await supabase.storage
-          .from('blog-images')
-          .remove(filesToDelete);
-      }
-
-      if (files2 && files2.length > 0) {
-        // Delete all files in the contents folder
-        const filesToDelete = files2.map(file => `blog-images/${id}/content/${file.name}`);
-        await supabase.storage
-          .from('blog-images')
-          .remove(filesToDelete);
-      }        
+      // Remove every image this post owned — its featured image and anything
+      // embedded in its body.
+      await deleteMediaFolder(blogThumbnailPrefix(id));
+      await deleteMediaFolder(blogContentPrefix(id));
 
       // Delete the blog post record
       const { error } = await supabase
