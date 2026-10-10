@@ -2,6 +2,7 @@ import { B2_PUBLIC_BASE } from '@/utils/mediaUrl';
 import {
   blogContentPrefix,
   blogThumbnailPrefix,
+  projectGalleryPrefix,
   projectThumbnailPrefix,
   PROFILE_PREFIX,
   type BlogImageKind,
@@ -135,6 +136,11 @@ export async function uploadBlogImage(
 
 export async function uploadProjectImage(file: File, projectId: string): Promise<string> {
   const { url } = await uploadImage(file, projectThumbnailPrefix(projectId));
+  return url;
+}
+
+export async function uploadProjectGalleryImage(file: File, projectId: string): Promise<string> {
+  const { url } = await uploadImage(file, projectGalleryPrefix(projectId));
   return url;
 }
 

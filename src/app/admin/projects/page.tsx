@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { resolveMediaUrl } from '@/utils/mediaUrl';
 import { deleteMediaFolder } from '@/utils/mediaUpload';
-import { projectThumbnailPrefix } from '@/utils/mediaPaths';
+import { projectGalleryPrefix, projectThumbnailPrefix } from '@/utils/mediaPaths';
 
 interface Project {
   id: string;
@@ -51,8 +51,10 @@ export default function ProjectsPage() {
     if (!confirm('Are you sure you want to delete this project?')) return;
 
     try {
-      // Remove every image this project owned.
+      // Remove every image this project owned. The gallery rows go with the
+      // project through the foreign key's ON DELETE CASCADE.
       await deleteMediaFolder(projectThumbnailPrefix(id));
+      await deleteMediaFolder(projectGalleryPrefix(id));
 
       // Delete the project record
       const { error } = await supabase

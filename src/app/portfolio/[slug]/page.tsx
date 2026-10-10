@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import ContactFooter from '@/components/ContactFooter';
+import ProjectGallery, { type GalleryImage } from '@/components/ProjectGallery';
 import { resolveHtmlImages, resolveMediaUrl } from '@/utils/mediaUrl';
 
 interface Project {
@@ -27,6 +28,7 @@ interface Project {
 
 export default function ProjectPage({ params }: { params: { slug: string } }) {
   const [project, setProject] = useState<Project | null>(null);
+  const [gallery, setGallery] = useState<GalleryImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const supabase = createClientComponentClient();
 
@@ -42,11 +44,37 @@ export default function ProjectPage({ params }: { params: { slug: string } }) {
         .single();
       if (error) throw error;
       setProject(data);
+      await fetchGallery(data.id);
     } catch (error) {
       console.error('Error fetching project:', error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  /**
+   * A failed gallery read must not take the whole project page down — a project
+   * with no gallery images is still worth showing, and the table only exists
+   * once the project_images migration has been applied.
+   */
+  const fetchGallery = async (projectId: string) => {
+    const { data, error } = await supabase
+      .from('project_images')
+      .select('id, image_url, alt, order_index')
+      .eq('project_id', projectId)
+      .order('order_index', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching project gallery:', error);
+      return;
+    }
+
+    setGallery(
+      (data || []).flatMap((row) => {
+        const url = resolveMediaUrl(row.image_url);
+        return url ? [{ id: row.id, url, alt: row.alt }] : [];
+      })
+    );
   };
 
   const getImageUrl = (path: string) => resolveMediaUrl(path);
@@ -173,6 +201,11 @@ export default function ProjectPage({ params }: { params: { slug: string } }) {
             )}
           </motion.div>
         </div>
+      </div>
+
+      {/* Gallery */}
+      <div className="max-w-7xl mx-auto px-6">
+        <ProjectGallery images={gallery} />
       </div>
 
       <ContactFooter />

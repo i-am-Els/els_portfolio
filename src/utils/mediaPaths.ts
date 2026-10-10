@@ -3,7 +3,8 @@
  *
  *   blog-images/{blogId}/thumbnail/{name}.webp      featured image (blog_posts.image_url)
  *   blog-images/{blogId}/content/{name}.webp        images embedded in blog_posts.content
- *   project-images/{projectId}/thumbnail/{name}.webp
+ *   project-images/{projectId}/thumbnail/{name}.webp  featured image (projects.image_url)
+ *   project-images/{projectId}/gallery/{name}.webp    project_images rows
  *   images/{profileId}.webp
  *
  * The browser uses these helpers to ask for a destination; /api/b2/upload and
@@ -18,11 +19,14 @@
 const UUID = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}';
 
 const BLOG_DIR_RE = new RegExp(`^blog-images/${UUID}/(content|thumbnail)$`);
-const PROJECT_DIR_RE = new RegExp(`^project-images/(temp|${UUID})/thumbnail$`);
+// "temp" used to live here for the upload-to-temp-then-copy dance, which Step 4
+// replaced. Nothing writes or reads project-images/temp/ any more, so it is no
+// longer part of the allowlist.
+const PROJECT_DIR_RE = new RegExp(`^project-images/${UUID}/(thumbnail|gallery)$`);
 const PROFILE_DIR_RE = /^images$/;
 
 const BLOG_FILE_RE = new RegExp(`^blog-images/${UUID}/(content|thumbnail)/[A-Za-z0-9._-]+$`);
-const PROJECT_FILE_RE = new RegExp(`^project-images/(temp|${UUID})/thumbnail/[A-Za-z0-9._-]+$`);
+const PROJECT_FILE_RE = new RegExp(`^project-images/${UUID}/(thumbnail|gallery)/[A-Za-z0-9._-]+$`);
 const PROFILE_FILE_RE = /^images\/[A-Za-z0-9._-]+$/;
 
 export type BlogImageKind = 'content' | 'thumbnail';
@@ -40,6 +44,9 @@ export const blogThumbnailPrefix = (blogId: string): string =>
 
 export const projectThumbnailPrefix = (projectId: string): string =>
   `project-images/${projectId}/thumbnail`;
+
+export const projectGalleryPrefix = (projectId: string): string =>
+  `project-images/${projectId}/gallery`;
 
 export const PROFILE_PREFIX: string = 'images';
 

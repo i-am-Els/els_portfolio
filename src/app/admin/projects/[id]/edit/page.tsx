@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { resolveMediaUrl } from '@/utils/mediaUrl';
-import { uploadProjectImage, deleteMedia, keyFromUrl } from '@/utils/mediaUpload';
+import { uploadProjectImage, uploadProjectGalleryImage, deleteMedia, keyFromUrl } from '@/utils/mediaUpload';
 
 interface Project {
   id: string;
@@ -30,6 +30,21 @@ interface Category {
   id: string;
   name: string;
   slug: string;
+}
+
+/**
+ * One gallery slot in the editor.
+ *
+ * `id` is empty and `file` set until the image has actually been written to B2,
+ * so nothing reaches storage unless the user saves. `url` doubles as the preview
+ * (a blob: URL while unsaved, the B2 URL afterwards) and, for existing images,
+ * as the value that gets retired if the user removes it.
+ */
+interface GalleryEntry {
+  id: string;
+  url: string;
+  file?: File;
+  alt: string;
 }
 
 export default function EditProjectPage({ params }: { params: { id: string } }) {
@@ -59,6 +74,9 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
   const [newTech, setNewTech] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [gallery, setGallery] = useState<GalleryEntry[]>([]);
+  // Removed gallery images are held until Save, then retired together.
+  const [removedImages, setRemovedImages] = useState<GalleryEntry[]>([]);
 
   useEffect(() => {
     if (params.id !== 'new') {
@@ -88,6 +106,23 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
 
         if (categoryError) throw categoryError;
         setSelectedCategories(categoryData.map(c => c.category_id));
+
+        // A failed gallery read must not block editing the rest of the project.
+        const { data: galleryData, error: galleryError } = await supabase
+          .from('project_images')
+          .select('id, image_url, alt, order_index')
+          .eq('project_id', params.id)
+          .order('order_index', { ascending: true });
+
+        if (galleryError) {
+          console.error('Error fetching gallery:', galleryError);
+        } else {
+          setGallery((galleryData || []).map(row => ({
+            id: row.id,
+            url: row.image_url,
+            alt: row.alt || ''
+          })));
+        }
       }
     } catch (error) {
       console.error('Error fetching project:', error);
@@ -147,6 +182,123 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
       const previewUrl = URL.createObjectURL(file);
       setImagePreview(previewUrl);
     }
+  };
+
+  /* ---------------------------------------------------------------- *
+   * Gallery — preview now, upload on Save
+   * ---------------------------------------------------------------- */
+
+  const handleGalleryAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    // Clear so the same file can be re-added after being removed.
+    e.target.value = '';
+    if (!files.length) return;
+
+    setGallery(prev => [
+      ...prev,
+      ...files.map(file => ({ id: '', url: URL.createObjectURL(file), file, alt: '' }))
+    ]);
+  };
+
+  const handleGalleryRemove = (index: number) => {
+    const entry = gallery[index];
+    if (!entry) return;
+
+    if (entry.id) {
+      setRemovedImages(prev => [...prev, entry]);
+    } else {
+      URL.revokeObjectURL(entry.url);
+    }
+    setGallery(gallery.filter((_, i) => i !== index));
+  };
+
+  const handleGalleryMove = (index: number, delta: number) => {
+    const target = index + delta;
+    if (target < 0 || target >= gallery.length) return;
+    const next = [...gallery];
+    [next[index], next[target]] = [next[target], next[index]];
+    setGallery(next);
+  };
+
+  const handleGalleryAlt = (index: number, alt: string) => {
+    setGallery(gallery.map((entry, i) => (i === index ? { ...entry, alt } : entry)));
+  };
+
+  /**
+   * The gallery table only exists once the migration has been applied, and
+   * there's no Supabase CLI on this project — say so plainly instead of
+   * surfacing a bare Postgres error.
+   */
+  const requireGalleryTable = (error: { code?: string } & Error) => {
+    if (error?.code === '42P01') {
+      throw new Error(
+        'Gallery images need the project_images table. Run ' +
+          'supabase/migrations/20261011000000_project_gallery.sql in the Supabase SQL editor, then save again.'
+      );
+    }
+    throw error;
+  };
+
+  /**
+   * Make the gallery match the editor.
+   *
+   * Uploads happen before a single row is touched — the same rule the featured
+   * image follows — so a failed upload never costs the gallery that already
+   * exists. Objects whose row is dropped are retired only once that drop
+   * succeeded, and both steps are safe to repeat if an earlier attempt died
+   * halfway.
+   */
+  const persistGallery = async (projectId: string) => {
+    // 1. Upload the new images so every entry has a real URL to write.
+    const written: GalleryEntry[] = [];
+    for (const entry of gallery) {
+      if (entry.file) {
+        const url = await uploadProjectGalleryImage(entry.file, projectId);
+        written.push({ id: '', url, alt: entry.alt });
+      } else {
+        written.push(entry);
+      }
+    }
+
+    // 2. Drop the rows the user removed, then the objects behind them.
+    for (const entry of removedImages) {
+      const { error } = await supabase
+        .from('project_images')
+        .delete()
+        .eq('id', entry.id);
+      if (error) requireGalleryTable(error);
+
+      const key = keyFromUrl(entry.url);
+      if (key) await deleteMedia(key);
+    }
+
+    // 3. Insert the new rows, and refresh order/alt on the ones we kept.
+    for (let i = 0; i < written.length; i++) {
+      const entry = written[i];
+      if (entry.id) {
+        const { error } = await supabase
+          .from('project_images')
+          .update({ alt: entry.alt || null, order_index: i, updated_at: new Date().toISOString() })
+          .eq('id', entry.id);
+        if (error) requireGalleryTable(error);
+      } else {
+        const { error } = await supabase
+          .from('project_images')
+          .insert({
+            project_id: projectId,
+            image_url: entry.url,
+            alt: entry.alt || null,
+            order_index: i
+          });
+        if (error) requireGalleryTable(error);
+      }
+    }
+
+    for (const entry of gallery) {
+      if (entry.file) URL.revokeObjectURL(entry.url);
+    }
+    setGallery(written);
+    setRemovedImages([]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -217,6 +369,8 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
           if (categoryError) throw categoryError;
         }
 
+        await persistGallery(data.id);
+
         router.push('/admin/projects');
       } else {
         const { error } = await supabase
@@ -251,6 +405,8 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
 
           if (categoryError) throw categoryError;
         }
+
+        await persistGallery(params.id);
 
         router.push('/admin/projects');
       }
@@ -372,6 +528,87 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
                 />
               </div>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Gallery
+            </label>
+            <p className="text-sm text-gray-500 mb-3">
+              Extra images for the project page, shown in this order. Nothing is uploaded until you save.
+            </p>
+
+            {gallery.length > 0 && (
+              <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+                {gallery.map((entry, index) => (
+                  <li key={entry.id || entry.url} className="rounded-lg border border-gray-200 bg-white p-2">
+                    <div className="relative aspect-[3/2] w-full overflow-hidden rounded bg-gray-100">
+                      <Image
+                        src={resolveMediaUrl(entry.url) || ''}
+                        alt=""
+                        fill
+                        sizes="(max-width: 640px) 100vw, 33vw"
+                        className="object-cover"
+                      />
+                      {!entry.id && (
+                        <span className="absolute top-1 left-1 rounded bg-amber-400 px-1.5 py-0.5 text-[10px] font-semibold text-gray-900">
+                          Not saved yet
+                        </span>
+                      )}
+                    </div>
+
+                    <input
+                      type="text"
+                      value={entry.alt}
+                      onChange={(e) => handleGalleryAlt(index, e.target.value)}
+                      placeholder="Alt text (describe the image)"
+                      className="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm"
+                    />
+
+                    <div className="mt-2 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleGalleryMove(index, -1)}
+                          disabled={index === 0}
+                          className="rounded border border-gray-300 px-2 py-1 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleGalleryMove(index, 1)}
+                          disabled={index === gallery.length - 1}
+                          className="rounded border border-gray-300 px-2 py-1 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          ↓
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleGalleryRemove(index)}
+                        className="rounded border border-red-200 px-2 py-1 text-red-600 hover:bg-red-50"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleGalleryAdd}
+              className="block w-full text-sm text-gray-500
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-lg file:border-0
+                file:text-sm file:font-medium
+                file:bg-black file:text-white
+                hover:file:bg-gray-800"
+            />
           </div>
 
           <div>
