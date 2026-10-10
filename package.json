@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "media:upload": "node scripts/upload-media-to-b2.mjs",
-    "media:upload:dry": "node scripts/upload-media-to-b2.mjs --dry-run"
+    "media:upload:dry": "node scripts/upload-media-to-b2.mjs --dry-run",
+    "media:rewrite": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/rewrite-db-media-urls.mjs",
+    "media:verify": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/rewrite-db-media-urls.mjs --verify"
   },
   "dependencies": {
     "@heroicons/react": "^2.1.1",
