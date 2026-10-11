@@ -93,6 +93,14 @@ export default function ProjectPage({ params }: { params: { slug: string } }) {
 
   const categoryLabel = project.project_categories?.[0]?.categories?.name?.toUpperCase() || 'PROJECT';
 
+  /**
+   * Without a gallery the About block spans the whole row. Keeping it pinned to
+   * a single column would strand two thirds of the width as empty space, which
+   * matters because most projects currently have no gallery images — only the
+   * split layout is conditional.
+   */
+  const hasGallery = gallery.length > 0;
+
   return (
     <main className="min-h-screen bg-[#0d0d0d]">
       <Navigation />
@@ -135,35 +143,46 @@ export default function ProjectPage({ params }: { params: { slug: string } }) {
           </motion.div>
         )}
 
-        <div className="grid md:grid-cols-3 gap-16 border-t border-white/10 pt-12">
-          {/* Main: description */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="md:col-span-2"
-          >
-            <span className="section-label text-white/30 block mb-6">Overview</span>
-            <div
-              className="prose prose-invert prose-sm max-w-none
-                text-white/50 leading-relaxed
-                [&_h2]:text-white [&_h2]:font-black [&_h2]:text-2xl [&_h2]:mt-8 [&_h2]:mb-3
-                [&_h3]:text-white [&_h3]:font-bold [&_h3]:mt-6 [&_h3]:mb-2
-                [&_strong]:text-white/80
-                [&_a]:text-[#c8ff00] [&_a]:no-underline [&_a:hover]:underline
-                [&_ul]:text-white/50 [&_ol]:text-white/50
-                [&_li]:mb-1"
-              dangerouslySetInnerHTML={{ __html: resolveHtmlImages(project.description) }}
-            />
-          </motion.div>
+        {/*
+          Two columns, deliberately ordered so mobile still reads About first:
+          in a single-column grid the `order` utilities are what stop the
+          masonry from pushing the text below four full-width images.
+        */}
+        <div className="grid md:grid-cols-3 gap-10 lg:gap-14 border-t border-white/10 pt-12">
+          {/* Gallery — masonry in the wide column */}
+          {hasGallery && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="md:col-span-2 order-2 md:order-1"
+            >
+              <ProjectGallery images={gallery} />
+            </motion.div>
+          )}
 
-          {/* Sidebar */}
+          {/* About — overview, description, then the date/tech/link meta */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="space-y-10"
+            className={`space-y-10 order-1 md:order-2${hasGallery ? '' : ' md:col-span-3'}`}
           >
+            <div>
+              <span className="section-label text-white/30 block mb-6">Overview</span>
+              <div
+                className="prose prose-invert prose-sm max-w-none
+                  text-white/50 leading-relaxed
+                  [&_h2]:text-white [&_h2]:font-black [&_h2]:text-2xl [&_h2]:mt-8 [&_h2]:mb-3
+                  [&_h3]:text-white [&_h3]:font-bold [&_h3]:mt-6 [&_h3]:mb-2
+                  [&_strong]:text-white/80
+                  [&_a]:text-[#c8ff00] [&_a]:no-underline [&_a:hover]:underline
+                  [&_ul]:text-white/50 [&_ol]:text-white/50
+                  [&_li]:mb-1"
+                dangerouslySetInnerHTML={{ __html: resolveHtmlImages(project.description) }}
+              />
+            </div>
+
             <div className="border-t border-white/10 pt-6">
               <span className="section-label text-white/30 block mb-3">Date</span>
               <p className="text-white/50 text-sm">
@@ -201,11 +220,6 @@ export default function ProjectPage({ params }: { params: { slug: string } }) {
             )}
           </motion.div>
         </div>
-      </div>
-
-      {/* Gallery */}
-      <div className="max-w-7xl mx-auto px-6">
-        <ProjectGallery images={gallery} />
       </div>
 
       <ContactFooter />
