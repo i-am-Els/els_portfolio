@@ -216,20 +216,25 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(
             fileInputRef.current?.click();
           }}
           className="px-2 py-1 rounded"
-          title="Insert Image"
+          title="Insert Image(s)"
         >
           <LucideImage size={18} />
           <input
             type="file"
             accept="image/*"
+            multiple
             ref={fileInputRef}
             style={{ display: 'none' }}
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              const localUrl = URL.createObjectURL(file);
-              setPendingImages(prev => ({ ...prev, [localUrl]: file }));
-              editor?.chain().focus().setImage({ src: localUrl }).run();
+            onChange={(e) => {
+              const files = Array.from(e.target.files ?? []);
+              if (!files.length) return;
+              for (const file of files) {
+                const localUrl = URL.createObjectURL(file);
+                setPendingImages(prev => ({ ...prev, [localUrl]: file }));
+                editor?.chain().focus().setImage({ src: localUrl }).run();
+              }
+              // Re-enable picking the same files on the next click.
+              e.target.value = '';
             }}
           />
         </button>
