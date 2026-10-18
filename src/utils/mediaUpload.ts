@@ -20,7 +20,24 @@ import {
  * removed are therefore never written to B2.
  */
 
-const QUALITY = 0.87; // matches the migrated asset set
+const QUALITY = 0.87; // matches the migrated asset set — do not lower
+
+/**
+ * Longest-edge cap for uploaded images. QHD (2560×1440) passes through at its
+ * native pixel dimensions; anything larger is scaled down to fit.
+ */
+export const MAX_DIMENSION = 2560;
+
+/**
+ * Client-side mirror of the server's MAX_UPLOAD_BYTES (4 MB). If an image is
+ * still bigger than this after resizing and encoding, fail loudly here rather
+ * than letting /api/b2/upload answer 413 in the middle of a save. The margin
+ * leaves room for multipart body overhead. Quality is intentionally NOT
+ * reduced to fit — oversized images are surfaced to the author instead.
+ */
+const MAX_ENCODED_BYTES = Math.round(3.8 * 1024 * 1024);
+
+const formatMb = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 
 export interface MediaUploadResult {
   key: string;
@@ -28,7 +45,9 @@ export interface MediaUploadResult {
 }
 
 /**
- * Re-encode an image to WebP so new uploads match the migrated assets.
+ * Resize to at most MAX_DIMENSION on the longest edge, then re-encode to WebP
+ * so new uploads match the migrated asset set. Images already within the cap
+ * (e.g. QHD screenshots) keep their exact pixel dimensions.
  * Falls back to the original file if the browser can't decode it or can't
  * produce WebP (e.g. older Safari).
  */
@@ -37,16 +56,17 @@ export async function toWebp(file: File, quality: number = QUALITY): Promise<Fil
 
   try {
     const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
     const canvas = document.createElement('canvas');
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
 
     const ctx = canvas.getContext('2d');
     if (!ctx) {
       bitmap.close?.();
       return file;
     }
-    ctx.drawImage(bitmap, 0, 0);
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
     bitmap.close?.();
 
     const blob = await new Promise<Blob | null>((resolve) =>
@@ -81,9 +101,21 @@ export async function uploadMedia(
   return { key: data.key, url: data.url };
 }
 
-/** Convert to WebP then upload. */
+/** Resize + convert to WebP, then upload. */
 export async function uploadImage(file: File, prefix: string, filename?: string) {
-  return uploadMedia(await toWebp(file), prefix, filename);
+  const encoded = await toWebp(file);
+
+  // toWebp may fall back to the original file (no WebP support), so check the
+  // size of whatever we're actually about to send. Failing here — before any
+  // network call — keeps the server's 413 from landing mid-save.
+  if (encoded.size > MAX_ENCODED_BYTES) {
+    throw new Error(
+      `"${file.name}" is ${formatMb(encoded.size)} even at ${MAX_DIMENSION}px — ` +
+        `please resize it (smaller dimensions, not lower quality) and re-insert it`
+    );
+  }
+
+  return uploadMedia(encoded, prefix, filename);
 }
 
 /** Best-effort delete; failures are non-fatal by design (callers ignore). */

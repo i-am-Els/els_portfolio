@@ -26,7 +26,8 @@ export const FlashMessageProvider = ({ children }: FlashMessageProviderProps) =>
     setMessage(msg);
     setType(msgType);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => setMessage(null), 4000);
+    // Errors list actionable detail (failed files, sizes) — keep them up longer.
+    timeoutRef.current = setTimeout(() => setMessage(null), msgType === 'error' ? 12000 : 4000);
   }, []);
 
   const handleClose = () => {

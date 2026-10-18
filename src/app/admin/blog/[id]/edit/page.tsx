@@ -192,15 +192,24 @@ export default function EditBlogPostPage({ params }: PageProps) {
         throw new Error('Please fill in all required fields');
       }
 
+      // Collects (non-fatal) upload failures so one bad image can't lose the save.
+      const failedUploads: string[] = [];
+
       let imageUrl = post.image_url;
       if (imageFile) {
         // Upload first, swap second — so a failed upload never costs you the
-        // old image.
-        imageUrl = await uploadBlogImage(imageFile, params.id, 'thumbnail');
-        const newKey = keyFromUrl(imageUrl);
-        const oldKey = keyFromUrl(post.image_url);
-        if (oldKey && oldKey !== newKey) {
-          await deleteMedia(oldKey);
+        // old image. A failure here is collected, not fatal: the body content
+        // should still save.
+        try {
+          imageUrl = await uploadBlogImage(imageFile, params.id, 'thumbnail');
+          const newKey = keyFromUrl(imageUrl);
+          const oldKey = keyFromUrl(post.image_url);
+          if (oldKey && oldKey !== newKey) {
+            await deleteMedia(oldKey);
+          }
+        } catch (err) {
+          const reason = err instanceof Error ? err.message : 'Upload failed';
+          failedUploads.push(`Featured image — ${reason}`);
         }
       }
 
@@ -254,10 +263,16 @@ export default function EditBlogPostPage({ params }: PageProps) {
         }
       }
       // --- Editor Images: Always upload and replace pending images for both new and existing posts ---
+      // One failed image must not throw away the rest — collect failures and keep going.
       const pendingImages = editorRef.current?.getPendingImages() || {};
       const replaceMap: { [localUrl: string]: string } = {};
       for (const [localUrl, file] of Object.entries(pendingImages)) {
-        replaceMap[localUrl] = await uploadBlogImage(file, blogId, 'content');
+        try {
+          replaceMap[localUrl] = await uploadBlogImage(file, blogId, 'content');
+        } catch (err) {
+          const reason = err instanceof Error ? err.message : 'Upload failed';
+          failedUploads.push(`${file.name}: ${reason}`);
+        }
       }
       if (Object.keys(replaceMap).length > 0) {
         editorRef.current?.replaceImageSrcs(replaceMap);
@@ -292,6 +307,18 @@ export default function EditBlogPostPage({ params }: PageProps) {
         .update({ content: updatedContent })
         .eq('id', blogId);
       if (contentUpdateError) throw contentUpdateError;
+
+      if (failedUploads.length > 0) {
+        // Everything that could be saved has been saved. Stay on the page so the
+        // author can replace the offending images and save again — the failed
+        // files are still in the editor's pendingImages, so a retry picks them up.
+        showMessage(
+          `Saved, but ${failedUploads.length} image${failedUploads.length === 1 ? '' : 's'} didn't upload — ` +
+            `replace ${failedUploads.length === 1 ? 'it' : 'them'} and save again. ${failedUploads.join('; ')}`,
+          'error'
+        );
+        return;
+      }
 
       router.push('/admin/blog');
     } catch (error: any) {

@@ -48,6 +48,9 @@ export default function NewBlogPostPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [usedImages, setUsedImages] = useState<Set<string>>(new Set());
+  // Set once the post row exists, so a retry after a partial image failure
+  // updates it instead of inserting a duplicate.
+  const [createdBlogId, setCreatedBlogId] = useState<string | null>(null);
   const editorRef = useRef<RichTextEditorHandle>(null);
   const router = useRouter();
   const supabase = createClientComponentClient();
@@ -140,32 +143,53 @@ export default function NewBlogPostPage() {
         tags: post.tags,
         published: post.published,
         read_time: post.read_time,
-        created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
-      const { data: created, error: createError } = await supabase
-        .from('blog_posts')
-        .insert([postData])
-        .select()
-        .single();
-      if (createError || !created) throw createError || new Error('Blog not created');
-      const blogId = created.id?.toString() || created.slug;
 
-      // Insert selected categories for this blog post
-      if (selectedCategoryIds.length > 0) {
-        const { error: catError } = await supabase
-          .from('blog_post_categories')
-          .insert(selectedCategoryIds.map(categoryId => ({
-            blog_post_id: blogId,
-            category_id: categoryId
-          })));
-        if (catError) throw catError;
+      let blogId = createdBlogId;
+      if (blogId) {
+        // Retry after a partial image failure — the row already exists.
+        const { error: retryError } = await supabase
+          .from('blog_posts')
+          .update(postData)
+          .eq('id', blogId);
+        if (retryError) throw retryError;
+      } else {
+        const { data: created, error: createError } = await supabase
+          .from('blog_posts')
+          .insert([{ ...postData, created_at: new Date().toISOString() }])
+          .select()
+          .single();
+        if (createError || !created) throw createError || new Error('Blog not created');
+        blogId = created.id?.toString() || created.slug;
+        const newBlogId = blogId;
+        setCreatedBlogId(newBlogId);
+
+        // Insert selected categories for this blog post (first save only)
+        if (selectedCategoryIds.length > 0) {
+          const { error: catError } = await supabase
+            .from('blog_post_categories')
+            .insert(selectedCategoryIds.map(categoryId => ({
+              blog_post_id: newBlogId,
+              category_id: categoryId
+            })));
+          if (catError) throw catError;
+        }
       }
+      if (!blogId) throw new Error('Blog post id missing');
 
+      // Upload inline images one by one. A single failure must not throw away
+      // the rest — collect them and keep going, then report all at once.
       const pendingImages = editorRef.current?.getPendingImages() || {};
       const replaceMap: { [localUrl: string]: string } = {};
+      const failedUploads: string[] = [];
       for (const [localUrl, file] of Object.entries(pendingImages)) {
-        replaceMap[localUrl] = await uploadBlogImage(file, blogId, 'content');
+        try {
+          replaceMap[localUrl] = await uploadBlogImage(file, blogId, 'content');
+        } catch (err) {
+          const reason = err instanceof Error ? err.message : 'Upload failed';
+          failedUploads.push(`${file.name}: ${reason}`);
+        }
       }
       if (Object.keys(replaceMap).length > 0) {
         editorRef.current?.replaceImageSrcs(replaceMap);
@@ -174,15 +198,33 @@ export default function NewBlogPostPage() {
 
       // The featured image chosen in this form was never uploaded — it used to be
       // dropped silently. Now that the row exists we can give it its real folder.
-      const imageUrl = imageFile
-        ? await uploadBlogImage(imageFile, blogId, 'thumbnail')
-        : post.image_url;
+      let imageUrl = post.image_url;
+      if (imageFile) {
+        try {
+          imageUrl = await uploadBlogImage(imageFile, blogId, 'thumbnail');
+        } catch (err) {
+          const reason = err instanceof Error ? err.message : 'Upload failed';
+          failedUploads.push(`Featured image — ${reason}`);
+        }
+      }
 
       const { error: updateError } = await supabase
         .from('blog_posts')
         .update({ content: updatedContent, image_url: imageUrl })
         .eq('id', blogId);
       if (updateError) throw updateError;
+
+      if (failedUploads.length > 0) {
+        // Everything that could be saved has been saved. Stay on the page so the
+        // author can replace the offending images and save again — the failed
+        // files are still in the editor's pendingImages, so a retry picks them up.
+        showMessage(
+          `Post saved, but ${failedUploads.length} image${failedUploads.length === 1 ? '' : 's'} didn't upload — ` +
+            `replace ${failedUploads.length === 1 ? 'it' : 'them'} and save again. ${failedUploads.join('; ')}`,
+          'error'
+        );
+        return;
+      }
 
       router.push('/admin/blog');
     } catch (error: any) {
