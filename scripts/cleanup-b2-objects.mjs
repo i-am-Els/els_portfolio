@@ -122,6 +122,9 @@ for (const p of await q('/rest/v1/projects?select=id,image_url,description')) {
   for (const m of (p.description || '').matchAll(/<img[^>]*\ssrc=["']([^"']+)["']/gi)) addUrl(m[1]);
 }
 for (const p of await q('/rest/v1/profile?select=id,image_url')) addUrl(p.image_url);
+// The gallery table (migration 20261011000000) holds a URL per gallery image.
+// Missing this used to misclassify every live gallery file as an orphan.
+for (const p of await q('/rest/v1/project_images?select=image_url')) addUrl(p.image_url);
 
 // --- classify --------------------------------------------------------------
 const uploadNames = new Set(uploads.map((u) => u.fileName));
