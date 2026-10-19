@@ -11,16 +11,16 @@ export interface GalleryImage {
 }
 
 /**
- * Masonry ("Pinterest") gallery with a full-screen lightbox.
+ * Stacked full-width gallery with a full-screen lightbox (ArtStation-style).
  *
- * The thumbnails use a CSS multi-column layout so each image keeps its natural
- * aspect ratio and packs into whichever column has room, instead of being
- * forced into a uniform crop. That is what lets a mixed set of portraits and
- * landscapes fill the available height rather than leaving ragged gaps.
+ * Each image spans the full content column at its natural aspect ratio, one
+ * per row, so renders and screenshots "pop" the way they do on an ArtStation
+ * project page — no columns, no cropping, no competing tiles.
  *
- * Multi-column is a block layout, not a grid: `gap` only controls the column
- * gutter, so the vertical rhythm comes from a bottom margin on each item, and
- * `break-inside-avoid` is what stops an image being sliced across two columns.
+ * A plain <img> (not next/image): the rows carry no intrinsic width/height,
+ * and `fill` would force every shot into a pre-assigned ratio — a crop. The
+ * files are already q87 WebP served off B2's CDN, so there is nothing for
+ * the image optimizer to gain here either.
  *
  * The lightbox closes on Escape or a backdrop click, and the arrow keys walk
  * the set. Only rendered when there is something to show.
@@ -70,31 +70,23 @@ export default function ProjectGallery({ images }: { images: GalleryImage[] }) {
     <section aria-label="Project gallery">
       <span className="section-label text-white/30 block mb-6">Gallery</span>
 
-      <div className="columns-1 sm:columns-2 gap-3">
+      <div className="flex flex-col gap-4 sm:gap-6">
         {images.map((image, index) => (
           <button
             key={image.id}
             type="button"
             onClick={() => setActive(index)}
             aria-label={`Open image ${index + 1} of ${images.length}`}
-            className="group relative mb-3 block w-full break-inside-avoid overflow-hidden bg-white/[0.03] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c8ff00]"
+            className="group relative block w-full overflow-hidden bg-white/[0.03] cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c8ff00]"
           >
-            {/*
-              A plain <img>, not next/image: masonry needs the intrinsic aspect
-              ratio, and the project_images rows do not carry width/height. With
-              `fill` every tile would have to be pre-assigned a fixed ratio,
-              which is exactly the uniform crop this layout is meant to avoid.
-              The files are already q87 WebP served off B2's CDN, so there is
-              nothing for the image optimizer to gain here.
-            */}
             <img
               src={image.url}
               alt={image.alt || ''}
               loading="lazy"
               decoding="async"
-              className="block w-full h-auto transition-transform duration-500 group-hover:scale-105"
+              className="block w-full h-auto transition-transform duration-500 group-hover:scale-[1.02]"
             />
-            <span className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/30" />
+            <span className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/20" />
           </button>
         ))}
       </div>
