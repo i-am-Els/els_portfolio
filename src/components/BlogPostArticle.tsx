@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { resolveHtmlImages, resolveMediaUrl } from '@/utils/mediaUrl';
 import { formatDate } from '@/utils/formatDate';
+import { resolveHtmlLinks } from '@/utils/siteLinks';
 import type { BlogPost } from '@/lib/content';
 
 /** Body of /blog/[slug]. Data is fetched by the page on the server. */
@@ -85,7 +86,7 @@ export default function BlogPostArticle({ post }: { post: BlogPost }) {
               [&_pre]:bg-[#141414] [&_pre]:border [&_pre]:border-white/10 [&_pre]:p-6
               [&_ul]:text-white/60 [&_ol]:text-white/60 [&_li]:mb-2
               [&_img]:w-full [&_img]:my-8"
-            dangerouslySetInnerHTML={{ __html: resolveHtmlImages(post.content) }}
+            dangerouslySetInnerHTML={{ __html: resolveHtmlLinks(resolveHtmlImages(post.content)) }}
           />
         </motion.div>
 

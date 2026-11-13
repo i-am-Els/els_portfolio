@@ -7,6 +7,7 @@ import Link from 'next/link';
 import ProjectGallery, { type GalleryImage } from '@/components/ProjectGallery';
 import { resolveHtmlImages, resolveMediaUrl } from '@/utils/mediaUrl';
 import { formatDate } from '@/utils/formatDate';
+import { resolveHtmlLinks, toSitePath } from '@/utils/siteLinks';
 import type { Project } from '@/lib/content';
 
 /** Body of /portfolio/[slug]. Data is fetched by the page on the server. */
@@ -16,6 +17,10 @@ export default function ProjectDetail({ project, gallery }: { project: Project; 
   const [showAbout, setShowAbout] = useState(false);
 
   const getImageUrl = (path: string) => resolveMediaUrl(path);
+
+  // A breakdown hosted on this site (usually a blog post) opens in the same
+  // tab via a relative link; anything else is external and opens a new tab.
+  const breakdownPath = project.project_url ? toSitePath(project.project_url) : null;
 
   const categoryLabel = project.project_categories?.[0]?.categories?.name?.toUpperCase() || 'PROJECT';
 
@@ -94,7 +99,7 @@ export default function ProjectDetail({ project, gallery }: { project: Project; 
                     [&_ul]:text-white/50 [&_ol]:text-white/50
                     [&_li]:mb-1
                     [&_img]:rounded-lg [&_img]:my-6"
-                  dangerouslySetInnerHTML={{ __html: resolveHtmlImages(project.description) }}
+                  dangerouslySetInnerHTML={{ __html: resolveHtmlLinks(resolveHtmlImages(project.description)) }}
                 />
               </motion.div>
 
@@ -158,7 +163,11 @@ export default function ProjectDetail({ project, gallery }: { project: Project; 
           {(project.project_url || project.github_url) && (
             <div className="space-y-3 sm:min-w-[220px]">
               <span className="section-label text-white/30 block mb-4">Links</span>
-              {project.project_url && (
+              {breakdownPath ? (
+                <Link href={breakdownPath} className="btn-acid flex items-center justify-center gap-2 text-xs w-full">
+                  View Project Breakdown <svg className="w-3 h-3 text-[#1a1a1a]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M7 7h10v10" /></svg>
+                </Link>
+              ) : project.project_url && (
                 <a href={project.project_url} target="_blank" rel="noopener noreferrer"
                   className="btn-acid flex items-center justify-center gap-2 text-xs w-full">
                   View Project Breakdown <svg className="w-3 h-3 text-[#1a1a1a]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M7 7h10v10" /></svg>
