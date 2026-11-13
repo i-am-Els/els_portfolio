@@ -1,41 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { clipReveal, staggerContainer, fadeUp, fadeIn } from '@/lib/motion';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import Link from 'next/link';
+import { staggerContainer, fadeUp, fadeIn } from '@/lib/motion';
+import type { Profile } from '@/lib/content';
 
-interface Profile {
-  id: string;
-  email: string;
-  phone: string;
-  location: string;
-  github_url: string;
-  artstation_url: string;
-  linkedin_url: string;
-  twitter_url?: string;
-}
-
-export default function ContactFooter() {
+/**
+ * Contact section and footer bar.
+ *
+ * The profile (email, location, social links) is fetched by the page on the
+ * server, so the address and links are in the HTML even without JavaScript.
+ */
+export default function ContactFooter({ profile }: { profile: Profile | null }) {
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const supabase = createClientComponentClient();
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const { data, error } = await supabase.from('profile').select('*').single();
-        if (error) throw error;
-        setProfile(data);
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-      }
-    };
-    fetchProfile();
-  }, [supabase]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

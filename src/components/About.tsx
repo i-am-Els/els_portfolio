@@ -1,15 +1,13 @@
 "use client";
 
 import { motion } from 'framer-motion';
-import { clipReveal, fadeUp, staggerContainer, lineGrow } from '@/lib/motion';
+import { fadeUp, staggerContainer, lineGrow } from '@/lib/motion';
 import { aboutContent } from '@/data/about';
 
-const defaultStats = [
-  { value: '3+', label: 'Years of Experience' },
-  { value: '4+', label: 'Mastered DCC Tools' },
-  { value: '3+', label: 'Industrial Standard Projects' },
-  { value: '3', label: 'Engines Mastered' },
-];
+// The stats grid ("3+ Years of Experience", "4+ Mastered DCC Tools", …) was
+// removed: the published projects did not back those numbers up. Bring a stats
+// block back only with facts the portfolio can prove (named tools, named
+// shipped projects).
 
 export default function About() {
   return (
@@ -26,8 +24,8 @@ export default function About() {
           />
         </div>
 
-        <div className="grid md:grid-cols-2 gap-16 items-start">
-          {/* Left: Headline + bio */}
+        <div className="max-w-3xl">
+          {/* Headline + bio */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -51,22 +49,6 @@ export default function About() {
             <div className="flex flex-wrap gap-3 mt-10">
               <a href="/about" className="btn-ghost text-xs">Full Bio →</a>
             </div>
-          </motion.div>
-
-          {/* Right: Stats grid */}
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-60px' }}
-            className="grid grid-cols-2 divide-x divide-y divide-white/10 border border-white/10"
-          >
-            {defaultStats.map((stat, i) => (
-              <motion.div key={i} variants={fadeUp} className="p-8">
-                <div className="text-5xl font-black text-[#c8ff00] mb-2">{stat.value}</div>
-                <div className="section-label text-white/40">{stat.label}</div>
-              </motion.div>
-            ))}
           </motion.div>
         </div>
 

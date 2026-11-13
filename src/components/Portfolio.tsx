@@ -1,37 +1,14 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fadeUp, staggerContainer, lineGrow } from '@/lib/motion';
 import Image from 'next/image';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Link from 'next/link';
 import { resolveMediaUrl } from '@/utils/mediaUrl';
+import type { Category, Project } from '@/lib/content';
 
 const MotionLink = motion.create(Link);
-
-interface Project {
-  id: string;
-  title: string;
-  description: string;
-  image_url: string | null;
-  project_url: string | null;
-  github_url: string | null;
-  technologies: string[];
-  created_at: string;
-  project_categories?: {
-    category_id: string;
-    categories?: { id: string; slug: string; name?: string };
-  }[];
-  slug: string;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  order_index: number;
-}
 
 // Hero card: full width, tall
 function HeroCard({ project }: { project: Project }) {
@@ -101,41 +78,9 @@ function GridCard({ project }: { project: Project }) {
   );
 }
 
-export default function Portfolio() {
+/** Home page "Selected Work" section. Data is fetched by the page on the server. */
+export default function Portfolio({ projects, categories }: { projects: Project[]; categories: Category[] }) {
   const [activeCategory, setActiveCategory] = useState('all');
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const supabase = createClientComponentClient();
-
-  useEffect(() => { fetchProjects(); fetchCategories(); }, []);
-
-  const fetchProjects = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('projects')
-        .select(`*, project_categories(category_id, categories(id, slug))`)
-        .eq('published', true)
-        .order('created_at', { ascending: false })
-        .limit(7);
-      if (error) throw error;
-      setProjects(data || []);
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchCategories = async () => {
-    try {
-      const { data, error } = await supabase.from('categories').select('*').order('order_index', { ascending: true });
-      if (error) throw error;
-      setCategories(data || []);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  };
 
   const filteredProjects = activeCategory === 'all'
     ? projects
@@ -186,43 +131,37 @@ export default function Portfolio() {
           ))}
         </div>
 
-        {isLoading ? (
-          <div className="flex justify-center py-32">
-            <div className="w-6 h-6 border border-[#c8ff00] border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : (
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeCategory}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25 }}
-              className="space-y-0"
-            >
-              {filteredProjects.length > 0 ? (
-                <>
-                  {/* Hero card — full width */}
-                  {heroProject && <HeroCard project={heroProject} />}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={activeCategory}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25 }}
+            className="space-y-0"
+          >
+            {filteredProjects.length > 0 ? (
+              <>
+                {/* Hero card — full width */}
+                {heroProject && <HeroCard project={heroProject} />}
 
-                  {/* Remaining — 2-column rows */}
-                  {gridRows.map((row, rowIdx) => (
-                    <div key={rowIdx} className="grid grid-cols-2 gap-0">
-                      {row.map(project => (
-                        <GridCard key={project.id} project={project} />
-                      ))}
-                      {row.length === 1 && <div className="bg-[#0d0d0d]" />}
-                    </div>
-                  ))}
-                </>
-              ) : (
-                <div className="flex items-center justify-center h-64 border border-white/10">
-                  <p className="text-white/30 text-sm tracking-widest uppercase">Coming Soon</p>
-                </div>
-              )}
-            </motion.div>
-          </AnimatePresence>
-        )}
+                {/* Remaining — 2-column rows */}
+                {gridRows.map((row, rowIdx) => (
+                  <div key={rowIdx} className="grid grid-cols-2 gap-0">
+                    {row.map(project => (
+                      <GridCard key={project.id} project={project} />
+                    ))}
+                    {row.length === 1 && <div className="bg-[#0d0d0d]" />}
+                  </div>
+                ))}
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-64 border border-white/10">
+                <p className="text-white/30 text-sm tracking-widest uppercase">Coming Soon</p>
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
 
         {/* View All Projects */}
         {filteredProjects.length > 0 && (
