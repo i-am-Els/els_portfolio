@@ -3,56 +3,15 @@
 import { motion } from 'framer-motion';
 import { fadeUp, lineGrow } from '@/lib/motion';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Link from 'next/link';
 import { resolveMediaUrl } from '@/utils/mediaUrl';
+import { formatDate } from '@/utils/formatDate';
+import type { BlogPost } from '@/lib/content';
 
 const MotionLink = motion.create(Link);
 
-interface BlogPost {
-  id: string;
-  title: string;
-  slug: string;
-  excerpt: string;
-  content: string;
-  image_url: string | null;
-  published: boolean;
-  read_time: number;
-  tags: string[];
-  created_at: string;
-  updated_at: string;
-  blog_post_categories?: {
-    category_id: string;
-    categories?: { id: string; slug: string };
-  }[];
-}
-
-export default function Blog() {
-  const [post, setPost] = useState<BlogPost | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const supabase = createClientComponentClient();
-
-  useEffect(() => { fetchLatestPost(); }, []);
-
-  const fetchLatestPost = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('blog_posts')
-        .select(`*, blog_post_categories(category_id, categories(id, slug))`)
-        .eq('published', true)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-      if (error) throw error;
-      setPost(data);
-    } catch (error) {
-      console.error('Error fetching latest post:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+/** Home page "Latest Writing" section. Data is fetched by the page on the server. */
+export default function Blog({ post }: { post: BlogPost | null }) {
   const getImageUrl = (path: string) => resolveMediaUrl(path);
 
   return (
@@ -71,11 +30,7 @@ export default function Blog() {
           />
         </div>
 
-        {isLoading ? (
-          <div className="flex justify-center py-32">
-            <div className="w-6 h-6 border border-[#c8ff00] border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : post ? (
+        {post ? (
           <motion.div
             variants={fadeUp}
             initial="hidden"
@@ -112,7 +67,7 @@ export default function Blog() {
                     {post.blog_post_categories?.[0]?.categories?.slug?.replace(/-/g, ' ').toUpperCase() || 'ARTICLE'}
                   </span>
                   <span className="section-label text-white/30">
-                    {new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {formatDate(post.created_at, 'short')}
                   </span>
                   <span className="section-label text-white/30">{post.read_time} min read</span>
                 </div>

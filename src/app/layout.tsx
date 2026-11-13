@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Barlow_Condensed, Barlow, Space_Mono } from "next/font/google";
 import "./globals.css";
 import ClientLayout from "@/components/ClientLayout";
+import { SITE_URL } from "@/lib/site";
 
 const barlowCondensed = Barlow_Condensed({
   subsets: ["latin"],
@@ -27,7 +28,7 @@ export const metadata: Metadata = {
     default: 'Eniola Olawale - Game Developer & Artist',
   },
   description: 'Portfolio website of Eniola Olawale, showcasing game development and technical art projects.',
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  metadataBase: new URL(SITE_URL),
   icons: {
     icon: [
       { url: '/icon.ico', sizes: 'any' },
@@ -44,7 +45,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Eniola Olawale - Game Developer & Artist',
     description: 'Portfolio website of Eniola Olawale, showcasing game development and art projects.',
-    url: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+    url: SITE_URL,
     siteName: 'Eniola Olawale',
     images: [{ url: '/seo-image.png', width: 1200, height: 630, alt: 'Eniola Olawale Portfolio' }],
     locale: 'en_US',

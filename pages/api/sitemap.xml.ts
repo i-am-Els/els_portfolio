@@ -1,72 +1,77 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { createClient } from '@supabase/supabase-js';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { getPostSlugs, getProjectSlugs, type SlugEntry } from '@/lib/content';
+import { SITE_URL } from '@/lib/site';
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://eniola-olawale-portfolio.vercel.app';
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-async function getAllBlogPosts() {
-  const { data, error } = await supabase
-    .from('blog_posts')
-    .select('slug')
-    .eq('published', true);
-
-  if (error) return [];
-  return data || [];
+interface UrlEntry {
+  path: string;
+  priority: string;
+  lastmod?: string;
 }
 
-async function getAllPortfolioProjects() {
-  const { data, error } = await supabase
-    .from('projects')
-    .select('slug')
-    .eq('published', true);
+const STATIC_PAGES: UrlEntry[] = [
+  { path: '/', priority: '1.0' },
+  { path: '/portfolio', priority: '0.8' },
+  { path: '/blog', priority: '0.8' },
+  { path: '/about', priority: '0.8' },
+];
 
-  if (error) return [];
-  return data || [];
+function toUrlEntries(prefix: string, entries: SlugEntry[]): UrlEntry[] {
+  return entries.map((entry) => ({
+    path: `${prefix}/${entry.slug}`,
+    priority: '0.7',
+    lastmod: new Date(entry.updated_at).toISOString(),
+  }));
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+function renderUrl({ path, priority, lastmod }: UrlEntry): string {
+  return [
+    '  <url>',
+    `    <loc>${escapeXml(`${SITE_URL}${path}`)}</loc>`,
+    lastmod ? `    <lastmod>${lastmod}</lastmod>` : null,
+    `    <priority>${priority}</priority>`,
+    '  </url>',
+  ]
+    .filter((line) => line !== null)
+    .join('\n');
+}
+
+export default async function handler(_req: NextApiRequest, res: NextApiResponse) {
+  let projects: SlugEntry[];
+  let posts: SlugEntry[];
   try {
-    const blogPosts = await getAllBlogPosts();
-    const portfolioProjects = await getAllPortfolioProjects();
-
-    res.setHeader('Content-Type', 'application/xml');
-    res.status(200).send(`<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>${BASE_URL}/</loc>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>${BASE_URL}/blog</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>${BASE_URL}/portfolio</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>${BASE_URL}/about</loc>
-    <priority>0.8</priority>
-  </url>
-  ${blogPosts.map(post => `
-  <url>
-    <loc>${BASE_URL}/blog/${post.slug}</loc>
-    <priority>0.7</priority>
-  </url>
-  `).join('')}
-  ${portfolioProjects.map(project => `
-  <url>
-    <loc>${BASE_URL}/portfolio/${project.slug}</loc>
-    <priority>0.7</priority>
-  </url>
-  `).join('')}
-</urlset>
-`);
-  } catch (err) {
+    [projects, posts] = await Promise.all([getProjectSlugs(), getPostSlugs()]);
+  } catch (error) {
+    // A sitemap missing every post and project is worse than none: fail loudly
+    // so crawlers retry later instead of dropping the URLs.
+    console.error('Sitemap generation failed:', error);
     res.status(500).send('Error generating sitemap');
+    return;
   }
-}
 
+  const urls = [
+    ...STATIC_PAGES,
+    ...toUrlEntries('/portfolio', projects),
+    ...toUrlEntries('/blog', posts),
+  ];
+
+  res.setHeader('Content-Type', 'application/xml');
+  res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+  res.status(200).send(
+    [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+      ...urls.map(renderUrl),
+      '</urlset>',
+      '',
+    ].join('\n'),
+  );
+}
