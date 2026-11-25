@@ -5,9 +5,10 @@ import About from '@/components/About';
 import Portfolio from '@/components/Portfolio';
 import Blog from '@/components/Blog';
 import ContactFooter from '@/components/ContactFooter';
-import PersonJsonLd from '@/components/PersonJsonLd';
+import JsonLd from '@/components/JsonLd';
 import { getCategories, getLatestPost, getProfile, getRecentProjects } from '@/lib/content';
 import { SITE_DESCRIPTION, SITE_TITLE, SITE_URL, SOCIAL_IMAGE } from '@/lib/site';
+import { homeStructuredData } from '@/lib/structuredData';
 
 // Re-render in the background at most once a minute, so new content from the
 // admin shows up without a redeploy.
@@ -50,7 +51,7 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-[#0d0d0d]">
-      <PersonJsonLd profile={profile} />
+      <JsonLd data={homeStructuredData(profile)} />
       <Navigation />
       <Hero />
       <Portfolio projects={projects} categories={categories} />

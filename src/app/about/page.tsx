@@ -2,13 +2,15 @@ import type { Metadata } from 'next';
 import Navigation from '@/components/Navigation';
 import AboutProfile from '@/components/AboutProfile';
 import ContactFooter from '@/components/ContactFooter';
+import JsonLd from '@/components/JsonLd';
 import { getEducation, getExperiences, getProfile, getSkillGroups } from '@/lib/content';
 import { SOCIAL_IMAGE } from '@/lib/site';
+import { aboutStructuredData } from '@/lib/structuredData';
 
 export const revalidate = 60;
 
 const FALLBACK_DESCRIPTION =
-  'About Eniola Olawale, a 3D artist and game developer based in Nigeria: experience, skills, tools and education.';
+  'About Eniola Olawale, a 3D artist and visual storyteller based in Nigeria: experience, skills, tools and education.';
 
 export async function generateMetadata(): Promise<Metadata> {
   const profile = await getProfile();
@@ -34,6 +36,7 @@ export default async function AboutPage() {
 
   return (
     <main className="min-h-screen bg-[#0d0d0d]">
+      <JsonLd data={aboutStructuredData(profile)} />
       <Navigation />
       <AboutProfile profile={profile} experiences={experiences} skills={skills} education={education} />
       <ContactFooter profile={profile} />
