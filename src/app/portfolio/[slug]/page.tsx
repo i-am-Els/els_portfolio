@@ -6,7 +6,7 @@ import ContactFooter from '@/components/ContactFooter';
 import type { GalleryImage } from '@/components/ProjectGallery';
 import { getProfile, getProjectBySlug, getProjectGallery, getProjectSlugs } from '@/lib/content';
 import { resolveMediaUrl } from '@/utils/mediaUrl';
-import { plainText } from '@/utils/plainText';
+import { resolveMeta } from '@/utils/seo';
 
 // Published projects are pre-rendered at build; one published later is
 // rendered on its first request. Both are then re-rendered at most once a minute.
@@ -25,16 +25,21 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     return { title: 'Project Not Found', description: 'The requested project could not be found.' };
   }
 
-  const description = plainText(project.description);
+  const { meta_title: title, meta_description: description } = resolveMeta({
+    title: project.title,
+    summary: project.description,
+    meta_title: project.meta_title,
+    meta_description: project.meta_description,
+  });
   const image = project.image_url ? resolveMediaUrl(project.image_url) : null;
 
   return {
     // The root layout's template appends " | Eniola Olawale".
-    title: project.title,
+    title,
     description,
     alternates: { canonical: `/portfolio/${project.slug}` },
     openGraph: {
-      title: project.title,
+      title,
       description,
       type: 'article',
       url: `/portfolio/${project.slug}`,
@@ -44,7 +49,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     },
     twitter: {
       card: 'summary_large_image',
-      title: project.title,
+      title,
       description,
       images: image ? [image] : undefined,
     },

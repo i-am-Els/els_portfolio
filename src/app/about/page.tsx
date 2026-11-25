@@ -3,10 +3,9 @@ import Navigation from '@/components/Navigation';
 import AboutProfile from '@/components/AboutProfile';
 import ContactFooter from '@/components/ContactFooter';
 import { getEducation, getExperiences, getProfile, getSkillGroups } from '@/lib/content';
+import { SOCIAL_IMAGE } from '@/lib/site';
 
 export const revalidate = 60;
-
-const SOCIAL_IMAGE = { url: '/seo-image.png', width: 1200, height: 630, alt: 'Eniola Olawale Portfolio' };
 
 const FALLBACK_DESCRIPTION =
   'About Eniola Olawale, a 3D artist and game developer based in Nigeria: experience, skills, tools and education.';

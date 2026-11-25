@@ -8,6 +8,8 @@ import { uploadBlogImage, deleteMedia, keyFromUrl } from '@/utils/mediaUpload';
 import React, { useRef } from 'react';
 import NextLink from 'next/link';
 import Image from 'next/image';
+import SeoFields from '@/components/admin/SeoFields';
+import { resolveMeta } from '@/utils/seo';
 import { useFlashMessage } from '@/components/FlashMessage';
 import { resolveHtmlImages, resolveMediaUrl } from '@/utils/mediaUrl';
 
@@ -26,10 +28,22 @@ interface BlogPost {
   image_url: string | null;
   published: boolean;
   read_time: number;
+  meta_title?: string | null;
+  meta_description?: string | null;
   category_id: number | null;
   tags: string[];
   created_at?: string;
   updated_at: string;
+}
+
+/** A post's meta fields, with blanks filled by a copy of its title / excerpt. */
+function postMeta(post: BlogPost) {
+  return resolveMeta({
+    title: post.title,
+    summary: post.excerpt?.trim() || post.content,
+    meta_title: post.meta_title,
+    meta_description: post.meta_description,
+  });
 }
 
 interface PageProps {
@@ -217,6 +231,8 @@ export default function EditBlogPostPage({ params }: PageProps) {
       const postData = {
         ...post,
         image_url: imageUrl,
+        // Blank meta fields are saved as a copy of the title / excerpt.
+        ...postMeta(post),
         updated_at: new Date().toISOString()
       };
 
@@ -407,6 +423,14 @@ export default function EditBlogPostPage({ params }: PageProps) {
             required
           />
         </div>
+        <SeoFields
+          noun="post"
+          title={post.title}
+          summary={post.excerpt?.trim() || post.content}
+          metaTitle={post.meta_title}
+          metaDescription={post.meta_description}
+          onChange={patch => setPost((prev: BlogPost) => ({ ...prev, ...patch }))}
+        />
         {/* Category Selection */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">

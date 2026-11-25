@@ -9,6 +9,8 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { resolveMediaUrl } from '@/utils/mediaUrl';
 import { uploadProfileImage } from '@/utils/mediaUpload';
+import { SITE_DESCRIPTION } from '@/lib/site';
+import { META_DESCRIPTION_MAX } from '@/utils/seo';
 
 interface Profile {
   id: string;
@@ -21,6 +23,8 @@ interface Profile {
   artstation_url: string;
   linkedin_url: string;
   image_url?: string;
+  /** Home page search / link-preview description. */
+  meta_description?: string | null;
   user_id: string;
 }
 
@@ -656,6 +660,27 @@ export default function ProfileAdmin() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
               rows={2}
             />
+            <p className="mt-1 text-xs text-gray-500">
+              Also the search and link-preview description of your About page.
+            </p>
+          </div>
+
+          <div>
+            <label htmlFor="home_meta_description" className="block text-sm font-medium text-gray-700 mb-2">
+              Home page preview description
+            </label>
+            <textarea
+              id="home_meta_description"
+              value={profile?.meta_description || ''}
+              placeholder={SITE_DESCRIPTION}
+              onChange={(e) => setProfile(prev => prev ? { ...prev, meta_description: e.target.value } : null)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+              rows={2}
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              The line under your name in Google, and in the preview card when someone shares
+              portfolio.elsrael.com. Keep it under {META_DESCRIPTION_MAX} characters. Empty uses the text shown.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
