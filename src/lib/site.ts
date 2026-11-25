@@ -16,6 +16,9 @@ export const SITE_URL = (
  */
 export const SITE_TITLE = 'Eniola Olawale – 3D Artist & Visual Storyteller';
 
+/** Role line shown in the footer bar. */
+export const SITE_ROLE = '3D Artist & Visual Storyteller';
+
 /**
  * Default link-preview / search description for the site.
  *

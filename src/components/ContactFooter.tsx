@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { staggerContainer, fadeUp, fadeIn } from '@/lib/motion';
 import type { Profile } from '@/lib/content';
+import { SITE_ROLE } from '@/lib/site';
 
 /**
  * Contact section and footer bar.
@@ -212,7 +213,7 @@ export default function ContactFooter({ profile }: { profile: Profile | null }) 
       {/* Footer bar */}
       <div className="border-t border-white/5 max-w-7xl mx-auto px-6 py-5 flex flex-col md:flex-row items-center justify-between gap-3">
         <span className="text-white font-black text-xs tracking-widest">ENIOLA.O</span>
-        <span className="section-label text-white/20">© {new Date().getFullYear()} — Game Developer & Artist</span>
+        <span className="section-label text-white/20">© {new Date().getFullYear()} — {SITE_ROLE}</span>
         <div className="flex gap-6">
           {socialLinks.map(s => (
             <a key={s.label} href={s.url!} target="_blank" rel="noopener noreferrer" className="section-label text-white/30 hover:text-white transition-colors">{s.label.toUpperCase()}</a>
