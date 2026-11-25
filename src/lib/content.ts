@@ -86,7 +86,8 @@ export interface Profile {
   linkedin_url: string | null;
   twitter_url?: string | null;
   image_url?: string | null;
-  /** Home page search / link-preview description. */
+  /** Home page search / link-preview title and description. */
+  meta_title?: string | null;
   meta_description?: string | null;
 }
 
