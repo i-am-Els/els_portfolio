@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Barlow_Condensed, Barlow, Space_Mono } from "next/font/google";
 import "./globals.css";
 import ClientLayout from "@/components/ClientLayout";
-import { SITE_URL } from "@/lib/site";
+import { SITE_DESCRIPTION, SITE_TITLE, SITE_URL, SOCIAL_IMAGE } from "@/lib/site";
 
 const barlowCondensed = Barlow_Condensed({
   subsets: ["latin"],
@@ -25,9 +25,9 @@ const spaceMono = Space_Mono({
 export const metadata: Metadata = {
   title: {
     template: '%s | Eniola Olawale',
-    default: 'Eniola Olawale - Game Developer & Artist',
+    default: SITE_TITLE,
   },
-  description: 'Portfolio website of Eniola Olawale, showcasing game development and technical art projects.',
+  description: SITE_DESCRIPTION,
   metadataBase: new URL(SITE_URL),
   icons: {
     icon: [
@@ -43,19 +43,19 @@ export const metadata: Metadata = {
   },
   manifest: '/site.webmanifest',
   openGraph: {
-    title: 'Eniola Olawale - Game Developer & Artist',
-    description: 'Portfolio website of Eniola Olawale, showcasing game development and art projects.',
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
     url: SITE_URL,
     siteName: 'Eniola Olawale',
-    images: [{ url: '/seo-image.png', width: 1200, height: 630, alt: 'Eniola Olawale Portfolio' }],
+    images: [SOCIAL_IMAGE],
     locale: 'en_US',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Eniola Olawale - Game Developer & Artist',
-    description: 'Portfolio website of Eniola Olawale, showcasing game development and technical art projects.',
-    images: ['/seo-image.png'],
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [SOCIAL_IMAGE.url],
   },
   robots: { index: true, follow: true },
 };

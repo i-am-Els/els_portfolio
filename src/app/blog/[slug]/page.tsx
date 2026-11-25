@@ -5,7 +5,7 @@ import BlogPostArticle from '@/components/BlogPostArticle';
 import ContactFooter from '@/components/ContactFooter';
 import { getPostBySlug, getPostSlugs, getProfile } from '@/lib/content';
 import { resolveMediaUrl } from '@/utils/mediaUrl';
-import { plainText } from '@/utils/plainText';
+import { resolveMeta } from '@/utils/seo';
 
 // Published posts are pre-rendered at build; one published later is rendered
 // on its first request. Both are then re-rendered at most once a minute.
@@ -24,16 +24,21 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     return { title: 'Blog Post Not Found', description: 'The requested blog post could not be found.' };
   }
 
-  const description = post.excerpt?.trim() || plainText(post.content);
+  const { meta_title: title, meta_description: description } = resolveMeta({
+    title: post.title,
+    summary: post.excerpt?.trim() || post.content,
+    meta_title: post.meta_title,
+    meta_description: post.meta_description,
+  });
   const image = post.image_url ? resolveMediaUrl(post.image_url) : null;
 
   return {
     // The root layout's template appends " | Eniola Olawale".
-    title: post.title,
+    title,
     description,
     alternates: { canonical: `/blog/${post.slug}` },
     openGraph: {
-      title: post.title,
+      title,
       description,
       type: 'article',
       url: `/blog/${post.slug}`,
@@ -45,7 +50,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     },
     twitter: {
       card: 'summary_large_image',
-      title: post.title,
+      title,
       description,
       images: image ? [image] : undefined,
     },

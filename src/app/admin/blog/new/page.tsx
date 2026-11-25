@@ -6,6 +6,8 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { RichTextEditor, RichTextEditorHandle } from '@/components/editor/RichTextEditor';
 import NextLink from 'next/link';
 import Image from 'next/image';
+import SeoFields from '@/components/admin/SeoFields';
+import { resolveMeta } from '@/utils/seo';
 import { useFlashMessage } from '@/components/FlashMessage';
 import { uploadBlogImage } from '@/utils/mediaUpload';
 import React, { useRef } from 'react';
@@ -25,7 +27,19 @@ interface BlogPost {
   image_url: string | null;
   published: boolean;
   read_time: number;
+  meta_title?: string | null;
+  meta_description?: string | null;
   tags: string[];
+}
+
+/** A post's meta fields, with blanks filled by a copy of its title / excerpt. */
+function postMeta(post: BlogPost) {
+  return resolveMeta({
+    title: post.title,
+    summary: post.excerpt?.trim() || post.content,
+    meta_title: post.meta_title,
+    meta_description: post.meta_description,
+  });
 }
 
 export default function NewBlogPostPage() {
@@ -143,6 +157,8 @@ export default function NewBlogPostPage() {
         tags: post.tags,
         published: post.published,
         read_time: post.read_time,
+        // Blank meta fields are saved as a copy of the title / excerpt.
+        ...postMeta(post),
         updated_at: new Date().toISOString(),
       };
 
@@ -307,6 +323,15 @@ export default function NewBlogPostPage() {
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black"
           />
         </div>
+
+        <SeoFields
+          noun="post"
+          title={post.title}
+          summary={post.excerpt?.trim() || post.content}
+          metaTitle={post.meta_title}
+          metaDescription={post.meta_description}
+          onChange={(patch) => setPost((prev: BlogPost) => ({ ...prev, ...patch }))}
+        />
 
         {/* Category Selection */}
         <div>

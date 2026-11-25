@@ -9,6 +9,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { resolveMediaUrl } from '@/utils/mediaUrl';
 import { uploadProjectImage, uploadProjectGalleryImage, deleteMedia, keyFromUrl } from '@/utils/mediaUpload';
+import SeoFields from '@/components/admin/SeoFields';
+import { resolveMeta } from '@/utils/seo';
 
 interface Project {
   id: string;
@@ -22,6 +24,8 @@ interface Project {
   published: boolean;
   featured: boolean;
   order_index: number;
+  meta_title: string | null;
+  meta_description: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -62,6 +66,8 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
     published: false,
     featured: false,
     order_index: 0,
+    meta_title: null,
+    meta_description: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   });
@@ -332,6 +338,13 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
         published: project.published,
         featured: project.featured,
         order_index: project.order_index,
+        // Blank meta fields are saved as a copy of the title / description.
+        ...resolveMeta({
+          title: project.title,
+          summary: project.description,
+          meta_title: project.meta_title,
+          meta_description: project.meta_description,
+        }),
         updated_at: new Date().toISOString()
       };
 
@@ -496,6 +509,15 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
               required
             />
           </div>
+
+          <SeoFields
+            noun="project"
+            title={project.title}
+            summary={project.description}
+            metaTitle={project.meta_title}
+            metaDescription={project.meta_description}
+            onChange={(patch) => setProject(prev => ({ ...prev, ...patch }))}
+          />
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">

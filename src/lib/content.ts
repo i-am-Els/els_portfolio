@@ -43,6 +43,8 @@ export interface Project {
   github_url: string | null;
   technologies: string[];
   order_index: number;
+  meta_title?: string | null;
+  meta_description?: string | null;
   created_at: string;
   updated_at: string;
   project_categories?: { category_id: string; categories?: CategoryRef | null }[];
@@ -64,6 +66,8 @@ export interface BlogPost {
   image_url: string | null;
   read_time: number;
   tags: string[];
+  meta_title?: string | null;
+  meta_description?: string | null;
   created_at: string;
   updated_at: string;
   blog_post_categories?: { category_id: string; categories?: CategoryRef | null }[];
@@ -82,6 +86,8 @@ export interface Profile {
   linkedin_url: string | null;
   twitter_url?: string | null;
   image_url?: string | null;
+  /** Home page search / link-preview description. */
+  meta_description?: string | null;
 }
 
 export interface Experience {
