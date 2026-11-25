@@ -1,5 +1,5 @@
 import type { Profile } from '@/lib/content';
-import { SITE_DESCRIPTION, SITE_ROLE, SITE_URL, SOCIAL_IMAGE } from '@/lib/site';
+import { SITE_ALTERNATE_NAME, SITE_DESCRIPTION, SITE_PERSON_NAME, SITE_ROLE, SITE_URL, SOCIAL_IMAGE } from '@/lib/site';
 import { resolveMediaUrl } from '@/utils/mediaUrl';
 
 /**
@@ -8,7 +8,8 @@ import { resolveMediaUrl } from '@/utils/mediaUrl';
  * Tells search engines that the person behind this site is Eniola Olawale
  * (also "Elsrael") and that the listed ArtStation / LinkedIn / GitHub
  * profiles are theirs (`sameAs`), so the name, the site and those profiles
- * get connected. The profile links come from Admin -> Profile.
+ * get connected. Every field comes from Admin -> Profile, with the defaults in
+ * src/lib/site.ts for empty ones.
  * Invisible on the page; check it with https://search.google.com/test/rich-results.
  */
 export default function PersonJsonLd({ profile }: { profile: Profile | null }) {
@@ -26,10 +27,9 @@ export default function PersonJsonLd({ profile }: { profile: Profile | null }) {
       {
         '@type': 'Person',
         '@id': `${SITE_URL}/#person`,
-        // Fixed like the site title: the profile's full_name has no admin field.
-        name: 'Eniola Olawale',
-        alternateName: 'Elsrael',
-        jobTitle: SITE_ROLE,
+        name: profile?.full_name?.trim() || SITE_PERSON_NAME,
+        alternateName: profile?.alternate_name?.trim() || SITE_ALTERNATE_NAME,
+        jobTitle: profile?.job_title?.trim() || SITE_ROLE,
         description: profile?.meta_description?.trim() || SITE_DESCRIPTION,
         url: SITE_URL,
         image,
@@ -40,7 +40,7 @@ export default function PersonJsonLd({ profile }: { profile: Profile | null }) {
         '@type': 'WebSite',
         '@id': `${SITE_URL}/#website`,
         url: SITE_URL,
-        name: 'Eniola Olawale',
+        name: profile?.full_name?.trim() || SITE_PERSON_NAME,
         publisher: { '@id': `${SITE_URL}/#person` },
       },
     ],
