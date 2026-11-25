@@ -86,6 +86,8 @@ export interface Profile {
   linkedin_url: string | null;
   twitter_url?: string | null;
   image_url?: string | null;
+  created_at?: string;
+  updated_at?: string;
   /** Nickname / handle, e.g. "Elsrael" (structured data). */
   alternate_name?: string | null;
   /** Role line: structured data and the footer. */
