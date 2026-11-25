@@ -16,7 +16,13 @@ export const SITE_URL = (
  */
 export const SITE_TITLE = 'Eniola Olawale – 3D Artist & Visual Storyteller';
 
-/** Role line shown in the footer bar. */
+/**
+ * Defaults for who the site belongs to, used when the matching Admin -> Profile
+ * field ("Name", "Also known as", "Job title") is empty. They feed the home
+ * page's structured data; the job title is also the footer's role line.
+ */
+export const SITE_PERSON_NAME = 'Eniola Olawale';
+export const SITE_ALTERNATE_NAME = 'Elsrael';
 export const SITE_ROLE = '3D Artist & Visual Storyteller';
 
 /**

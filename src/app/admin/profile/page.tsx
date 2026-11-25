@@ -9,11 +9,16 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { resolveMediaUrl } from '@/utils/mediaUrl';
 import { uploadProfileImage } from '@/utils/mediaUpload';
-import { SITE_DESCRIPTION, SITE_TITLE } from '@/lib/site';
+import { SITE_ALTERNATE_NAME, SITE_DESCRIPTION, SITE_PERSON_NAME, SITE_ROLE, SITE_TITLE } from '@/lib/site';
 import { META_DESCRIPTION_MAX } from '@/utils/seo';
 
 interface Profile {
   id: string;
+  full_name?: string | null;
+  /** Nickname / handle, e.g. "Elsrael". */
+  alternate_name?: string | null;
+  /** Role line: search-engine profile and the footer. */
+  job_title?: string | null;
   bio: string;
   short_bio: string;
   email: string;
@@ -665,6 +670,58 @@ export default function ProfileAdmin() {
               Also the search and link-preview description of your About page.
             </p>
           </div>
+
+          <fieldset className="space-y-4 rounded-md border border-gray-300 p-4">
+            <legend className="px-1 text-sm font-medium text-gray-700">Who you are (for search engines)</legend>
+            <p className="text-xs text-gray-500">
+              Hidden on the page, but read by Google to connect your name, this site and your ArtStation,
+              LinkedIn and GitHub links below. Empty fields use the text shown.
+            </p>
+            <div>
+              <label htmlFor="full_name" className="block text-sm font-medium text-gray-700 mb-2">
+                Name
+              </label>
+              <input
+                id="full_name"
+                type="text"
+                value={profile?.full_name || ''}
+                placeholder={SITE_PERSON_NAME}
+                onChange={(e) => setProfile(prev => prev ? { ...prev, full_name: e.target.value } : null)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+              />
+              <p className="mt-1 text-xs text-gray-500">Your name as people search for it.</p>
+            </div>
+            <div>
+              <label htmlFor="alternate_name" className="block text-sm font-medium text-gray-700 mb-2">
+                Also known as
+              </label>
+              <input
+                id="alternate_name"
+                type="text"
+                value={profile?.alternate_name || ''}
+                placeholder={SITE_ALTERNATE_NAME}
+                onChange={(e) => setProfile(prev => prev ? { ...prev, alternate_name: e.target.value } : null)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+              />
+              <p className="mt-1 text-xs text-gray-500">A nickname or handle you also go by online.</p>
+            </div>
+            <div>
+              <label htmlFor="job_title" className="block text-sm font-medium text-gray-700 mb-2">
+                Job title
+              </label>
+              <input
+                id="job_title"
+                type="text"
+                value={profile?.job_title || ''}
+                placeholder={SITE_ROLE}
+                onChange={(e) => setProfile(prev => prev ? { ...prev, job_title: e.target.value } : null)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Also the role line in the footer bar of every page.
+              </p>
+            </div>
+          </fieldset>
 
           <div>
             <label htmlFor="home_meta_title" className="block text-sm font-medium text-gray-700 mb-2">

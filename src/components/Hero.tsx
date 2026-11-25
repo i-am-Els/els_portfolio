@@ -119,35 +119,27 @@ style={{
             PORTFOLIO — {new Date().getFullYear()}
           </motion.p>
 
-          {/* "ENIOLA" — clip reveal */}
-          <div className="overflow-hidden">
-            <motion.h1
-  variants={clipReveal}
-  className="font-display leading-[0.9] tracking-tight text-white mb-2"
-  style={{
-      fontSize: "clamp(4rem,12vw,11rem)",
-      fontWeight: 900,
-  }}
->
-  ENIOLA
-</motion.h1>
-          </div>
-
-          {/* "OLAWALE" — clip reveal */}
-          <div className="overflow-hidden">
-            <motion.h1
-  variants={clipReveal}
-  className="font-display leading-[0.9] tracking-tight mb-10"
-  style={{
-      fontSize: "clamp(4rem,12vw,11rem)",
-      fontWeight: 900,
-      WebkitTextStroke: "1px rgba(237,237,237,0.3)",
-      color: "transparent",
-  }}
->
-  OLAWALE
-</motion.h1>
-          </div>
+          {/*
+            One <h1> for the page (search engines expect a single main heading);
+            each name line still clip-reveals on its own.
+          */}
+          <h1 className="font-display leading-[0.9] tracking-tight mb-10" style={{ fontSize: "clamp(4rem,12vw,11rem)", fontWeight: 900 }}>
+            <span className="block overflow-hidden mb-2">
+              <motion.span variants={clipReveal} className="block text-white">
+                ENIOLA
+              </motion.span>
+            </span>
+            {' '}
+            <span className="block overflow-hidden">
+              <motion.span
+                variants={clipReveal}
+                className="block"
+                style={{ WebkitTextStroke: "1px rgba(237,237,237,0.3)", color: "transparent" }}
+              >
+                OLAWALE
+              </motion.span>
+            </span>
+          </h1>
 
           {/* Divider */}
           <motion.div
