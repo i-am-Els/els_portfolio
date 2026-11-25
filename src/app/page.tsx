@@ -14,17 +14,20 @@ export const revalidate = 60;
 
 const HOME_PROJECT_COUNT = 7;
 
-/** The description comes from Admin → Profile → "Home page preview description". */
+/** Title and description come from Admin → Profile → "Home page preview title / description". */
 export async function generateMetadata(): Promise<Metadata> {
   const profile = await getProfile();
+  const title = profile?.meta_title?.trim() || SITE_TITLE;
   const description = profile?.meta_description?.trim() || SITE_DESCRIPTION;
 
   return {
+    // `absolute`: the home title already carries the name, so skip the " | Eniola Olawale" template.
+    title: { absolute: title },
     description,
     alternates: { canonical: '/' },
     // A page's openGraph/twitter replace the root layout's, so every field is repeated here.
     openGraph: {
-      title: SITE_TITLE,
+      title,
       description,
       url: SITE_URL,
       siteName: 'Eniola Olawale',
@@ -32,7 +35,7 @@ export async function generateMetadata(): Promise<Metadata> {
       locale: 'en_US',
       type: 'website',
     },
-    twitter: { card: 'summary_large_image', title: SITE_TITLE, description, images: [SOCIAL_IMAGE.url] },
+    twitter: { card: 'summary_large_image', title, description, images: [SOCIAL_IMAGE.url] },
   };
 }
 

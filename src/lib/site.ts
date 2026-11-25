@@ -9,8 +9,15 @@ export const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL || 'https://portfolio.elsrael.com'
 ).replace(/\/+$/, '');
 
-/** Title of the home page, and of any page that sets none. */
-export const SITE_TITLE = 'Eniola Olawale - Game Developer & Artist';
+/**
+ * Default title of the home page, and the title of any page that sets none.
+ *
+ * The home page uses the profile's "Home page preview title" when it is set.
+ */
+export const SITE_TITLE = 'Eniola Olawale – 3D Artist & Visual Storyteller';
+
+/** Role line shown in the footer bar. */
+export const SITE_ROLE = '3D Artist & Visual Storyteller';
 
 /**
  * Default link-preview / search description for the site.
